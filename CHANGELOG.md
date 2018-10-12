@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+<a name="0.0.4"></a>
+## [0.0.4](https://github.com/nicolasdao/google-cloud-tasks/compare/v0.0.3...v0.0.4) (2018-10-12)
+
+
+### Bug Fixes
+
+* Add missing 'collection.batch' function ([68e7806](https://github.com/nicolasdao/google-cloud-tasks/commit/68e7806))
+
+
+
 <a name="0.0.3"></a>
 ## [0.0.3](https://github.com/nicolasdao/google-cloud-tasks/compare/v0.0.2...v0.0.3) (2018-10-12)
 
