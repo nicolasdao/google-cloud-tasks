@@ -36,7 +36,6 @@
     "standard-version": "^4.4.0"
   },
   "dependencies": {
-    "axios": "^0.18.0",
     "functional": "^1.0.0",
     "google-auto-auth": "^0.10.1",
     "node-fetch": "^2.2.0",

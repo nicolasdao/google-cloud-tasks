@@ -182,6 +182,26 @@ const mergeCollection = (...collections) => {
 	})
 }
 
+/**
+ * Breaks down an array in a collection of array of size 'batchSize'.
+ * 
+ * @param  {Array}  col       Initial collection (e.g. [1,2,3,4,5])
+ * @param  {Number} batchSize Size of each batch (e.g. 2)
+ * @return {Array}           collection of array of size 'batchSize' (e.g. [[1,2], [3,4], [5]]).
+ */
+const batch = (col, batchSize=1) => {
+	const l = (col || []).length-1
+	return l < 0 ? [] : col.reduce((acc,item,idx) => {
+		acc.current.value.push(item)
+		acc.current.size++
+		if (acc.current.size == batchSize || idx == l) {
+			acc.result.push(acc.current.value)
+			acc.current = { value:[], size:0 }
+		}
+		return acc
+	},{ result:[], current: { value:[], size:0 } }).result
+}
+
 module.exports = {
 	identity: {
 		'new': newId
@@ -190,6 +210,7 @@ module.exports = {
 		timestamp: getTimestamp
 	},
 	collection: {
+		batch,
 		sortBy,
 		seed: newSeed,
 		merge: mergeCollection
