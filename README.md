@@ -1,42 +1,80 @@
-# Google Cloud Task &middot;  [![NPM](https://img.shields.io/npm/v/webfunc.svg?style=flat)](https://www.npmjs.com/package/webfunc) [![Tests](https://travis-ci.org/nicolasdao/webfunc.svg?branch=master)](https://travis-ci.org/nicolasdao/webfunc) [![License](https://img.shields.io/badge/License-BSD%203--Clause-blue.svg)](https://opensource.org/licenses/BSD-3-Clause) [![Neap](https://neap.co/img/made_by_neap.svg)](#this-is-what-we-re-up-to)
-__*Empty project*__ which does heaps of cool stuff.
+# Google Cloud Tasks &middot;  [![NPM](https://img.shields.io/npm/v/google-cloud-tasks.svg?style=flat)](https://www.npmjs.com/package/google-cloud-tasks) [![Tests](https://travis-ci.org/nicolasdao/google-cloud-tasks.svg?branch=master)](https://travis-ci.org/nicolasdao/google-cloud-tasks) [![License](https://img.shields.io/badge/License-BSD%203--Clause-blue.svg)](https://opensource.org/licenses/BSD-3-Clause) [![Neap](https://neap.co/img/made_by_neap.svg)](#this-is-what-we-re-up-to)
+__*Google Cloud Tasks*__ is node.js package to push tasks to Google Cloud Tasks (beta). It also include pushing tasks in batches.
 
 # Table of Contents
 
 > * [Install](#install) 
 > * [How To Use It](#how-to-use-it) 
->   - [Basic](#basic)
->   - [Config](#config)
-> * [FAQ](#faq)
 > * [About Neap](#this-is-what-we-re-up-to)
 > * [License](#license)
 
 
 # Install
 ```
-git clone https://github.com/nicolasdao/template-emptyjs.git new-project-name
-cd new-project-name
-npm install
-npm test
-npm start
+npm i google-cloud-tasks --save
 ```
 
 # How To Use It
-## Basic
 
-  | #  |Task             | Command                                                       | Note                                               | 
-  |:-:| :--------------- |:------------------------------------------------------------- |:---------------------------------------------------|
-  | 1 | Start            | `npm start`                                                   | Start node with hot reload thanks to `node-dev`.   |
-  | 2 | Lint             | `npm run lint`                                              	 | Lint and automatically fixes errors when possible. |
-  | 3 | Increase version | `npm run release`<br/>`npm run release -- --release-as 1.1.0` | The 1st command increments the version, while the 2nd sets the version to a specific number. |
-  | 4 | Test             | `npm test`                                                    | Test all files in the `test` folder.               |
+## Prerequisite
 
-## Config
+Before using this package, you must first:
 
-__*Update The git Repo:*__ `git remote set-url origin https://github.com/nicolasdao/project.git`
+1. Have a Google Cloud Account.
 
-# FAQ
-Blablabla
+2. Have a Project in that Google Account (the next step are specific to that Project). __WARNING__: As of today (Oct 2018), Google Cloud Tasks API is in beta. That means that not all locations are available. Make sure that your App Engine is running in one of the following location:
+	- us-central1 (Iowa)
+	- us-east1 (South Carolina)
+	- europe-west1 (Belgium)
+	- asia-northeast1 (Tokyo)
+
+3. Have an App Engine service running.
+
+4. Have a Task Queue configured to push tasks to the App Engine service above.
+
+5. Have a Service Account set up with the following 2 roles:
+	- `roles/appengine.appViewer`
+	- `roles/cloudtasks.enqueuer`
+
+6. Get the JSON keys file for that Service Account above
+
+7. Save that JSON key into a `service-account.json` file. Make sure it is located under a path that is accessible to your app (the root folder usually).
+
+8. Add a `location_id` property into that `service-account.json` file. That property should contain the location of your App Engine. Because the Google Cloud Tasks API is currently in beta, only the following locations are available (as of Oct 2018):
+	- `us-central1`
+	- `us-east1`
+	- `europe-west1`
+	- `asia-northeast1`
+
+## Show Me The Code
+
+```js
+const { join } = require('path')
+const createClient = require('google-cloud-tasks')
+
+const client = createClient({
+	queue: 'your-queue-name',
+	method: 'POST',
+	pathname: '/',
+	jsonKeyFile: join(__dirname, './service-account.json')
+})
+
+const createArray = (size=0) => Array.apply(null, Array(size))
+
+// Push a single task to the queue
+const task_01 = { name: 'task #1', otherData: {} }
+
+client.push(task_01).then(res => console.log(res))
+
+// Push a 100 tasks to the queue
+const batchOfTasks = createArray(100).map((x,id) => ({ 
+	id,  
+	name: `task #${id}`,
+	otherData: {}
+}))
+
+client.batch(batchOfTasks).then(res => console.log(res))
+```
 
 # This Is What We re Up To
 We are Neap, an Australian Technology consultancy powering the startup ecosystem in Sydney. We simply love building Tech and also meeting new people, so don't hesitate to connect with us at [https://neap.co](https://neap.co).
