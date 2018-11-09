@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+<a name="0.1.0"></a>
+# [0.1.0](https://github.com/nicolasdao/google-cloud-tasks/compare/v0.0.4...v0.1.0) (2018-11-09)
+
+
+### Features
+
+* Add support for scheduling tasks and overriding the client params ([8192b51](https://github.com/nicolasdao/google-cloud-tasks/commit/8192b51))
+
+
+
 <a name="0.0.4"></a>
 ## [0.0.4](https://github.com/nicolasdao/google-cloud-tasks/compare/v0.0.3...v0.0.4) (2018-10-12)
 
