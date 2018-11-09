@@ -47,6 +47,7 @@ Before using this package, you must first:
 	- `asia-northeast1`
 
 ## Show Me The Code
+### Basic Example
 
 ```js
 const { join } = require('path')
@@ -62,18 +63,121 @@ const client = createClient({
 const createArray = (size=0) => Array.apply(null, Array(size))
 
 // Push a single task to the queue
-const task_01 = { name: 'task #1', otherData: {} }
+const task_01 = { 
+	body: { 
+		name: 'task #1', 
+		otherData: {} 
+	} 
+}
 
 client.push(task_01).then(res => console.log(res))
 
 // Push a 100 tasks to the queue
 const batchOfTasks = createArray(100).map((x,id) => ({ 
-	id,  
-	name: `task #${id}`,
-	otherData: {}
+	body: {
+		id,  
+		name: `task #${id}`,
+		otherData: {}
+	}
 }))
 
 client.batch(batchOfTasks).then(res => console.log(res))
+```
+
+### Intermediate Examples
+#### #1. Override The Default Client Config
+
+The following example overrides the default `'POST'` method and `'/'` pathname:
+
+```js
+const task_02 = { 
+	method: 'GET',
+	pathname: '/?message=hello'
+	body: { 
+		name: 'task #1', 
+		otherData: {} 
+	} 
+}
+
+client.push(task_02).then(res => console.log(res))
+```
+
+#### #2. Add Custom Headers
+
+The following example overrides the default `'POST'` method and `'/'` pathname:
+
+```js
+const task_02 = { 
+	method: 'GET',
+	pathname: '/?message=hello',
+	headers: {
+		hello: 'world'
+	},
+	body: { 
+		name: 'task #1', 
+		otherData: {} 
+	} 
+}
+
+client.push(task_02).then(res => console.log(res))
+```
+
+#### #3. Execute Later
+
+The following example shows how to schedule a task for a later execution:
+
+```js
+const addMinutesToDate = (d, v=0) => {
+	const t = new Date(d)
+	t.setMinutes(d.getMinutes() + v)
+	return t
+}
+
+const task_04 = { 
+	method: 'GET',
+	pathname: '/?message=hello'
+	schedule: addMinutesToDate(new Date(), 1).toISOString(),
+	body: { 
+		name: 'task #1', 
+		otherData: {} 
+	} 
+}
+
+client.push(task_04).then(res => console.log(res))
+```
+
+#### #4. Execute Only Once
+
+The following example shows how to execute a task only once:
+
+```js
+const task_05 = { 
+	id: 1,
+	method: 'GET',
+	pathname: '/?message=hello'
+	body: { 
+		name: 'task #1', 
+		otherData: {} 
+	} 
+}
+
+client.push(task_05).then(res => console.log(res))
+client.push(task_05).then(res => console.log(res))
+```
+
+The second push will return an HTTP response (not throw an exception) similar to this:
+
+```js
+{
+ "status": 409,
+ "data": {
+  "error": {
+   "code": 409,
+   "message": "Requested entity already exists",
+   "status": "ALREADY_EXISTS"
+  }
+ }
+}
 ```
 
 # This Is What We re Up To

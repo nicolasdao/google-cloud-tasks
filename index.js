@@ -17,23 +17,33 @@ const _validateRequiredParams = (params={}) => Object.keys(params).forEach(p => 
 		throw new Error(`Parameter '${p}' is required.`)
 })
 
-const pushTask = (projectId, locationId, queueName, token, method, pathname, body) => Promise.resolve(null).then(() => {
+const pushTask = ({ projectId, locationId, queueName, token, method, pathname, headers, body, id, schedule }) => Promise.resolve(null).then(() => {
 	_validateRequiredParams({ projectId, locationId, queueName, token, method })
 	const m = method.toUpperCase()
 	let request = {
+		headers,
 		httpMethod: m,
-		relativeUri: pathname || '/'
+		relativeUri: `/${(pathname || '').replace(/^\//, '')}`
 	}
 	if (m != 'GET' && body)
 		request.body = Buffer.from(JSON.stringify(body)).toString('base64')
 
+	let payload = {
+		task: { 
+			appEngineHttpRequest: request 
+		},
+		responseView: 'FULL'
+	}
+
+	if (id)
+		payload.task.name = `projects/${projectId}/locations/${locationId}/queues/${queueName}/tasks/${id}`
+	if (schedule)
+		payload.task.scheduleTime = schedule
+
 	return fetch.post(APP_ENG_PUSH_TASK_URL(projectId, locationId, queueName), {
 		Accept: 'application/json',
 		Authorization: `Bearer ${token}`
-	}, JSON.stringify({
-		task: { appEngineHttpRequest: request },
-		responseView: 'FULL'
-	}))
+	}, JSON.stringify(payload))
 })
 
 const HTTP_METHODS = { 'GET': true, 'POST': true, 'PUT': true, 'DELETE': true, 'PATCH': true, 'OPTIONS': true, 'HEAD': true }
@@ -57,10 +67,20 @@ const createClient = ({ queue, method, pathname, jsonKeyFile}) => {
 	})
 
 	const push = taskData => { 
-		const relativeUri = taskData && typeof(taskData) == 'string' ? taskData : pathname
-		const body = taskData && typeof(taskData) == 'object' ? taskData : {}
+		const { id, method:_method, schedule, pathname:_pathname, headers={}, body={} } = taskData
 		return getToken(auth)
-			.then(token => pushTask(project_id, location_id, queue, token, method, relativeUri, body))
+			.then(token => pushTask({
+				id,
+				schedule,
+				projectId: project_id, 
+				locationId: location_id, 
+				queueName: queue, 
+				token, 
+				method: _method || method,
+				pathname: _pathname || pathname, 
+				headers,
+				body
+			}))
 	}
 
 	const retryPush = (taskData, options={}) => retry(() => push(taskData), () => true, { ignoreFailure: true, retryInterval: 800 })
