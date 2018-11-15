@@ -51,9 +51,9 @@ Before using this package, you must first:
 
 ```js
 const { join } = require('path')
-const createClient = require('google-cloud-tasks')
+const { client } = require('google-cloud-tasks')
 
-const client = createClient({
+const queue = client.new({
 	queue: 'your-queue-name',
 	method: 'POST',
 	pathname: '/',
@@ -70,7 +70,7 @@ const task_01 = {
 	} 
 }
 
-client.push(task_01).then(res => console.log(res))
+queue.push(task_01).then(res => console.log(res))
 
 // Push a 100 tasks to the queue
 const batchOfTasks = createArray(100).map((x,id) => ({ 
@@ -81,7 +81,7 @@ const batchOfTasks = createArray(100).map((x,id) => ({
 	}
 }))
 
-client.batch(batchOfTasks).then(res => console.log(res))
+queue.batch(batchOfTasks).then(res => console.log(res))
 ```
 
 ### Intermediate Examples
@@ -99,7 +99,7 @@ const task_02 = {
 	} 
 }
 
-client.push(task_02).then(res => console.log(res))
+queue.push(task_02).then(res => console.log(res))
 ```
 
 #### #2. Add Custom Headers
@@ -119,7 +119,7 @@ const task_02 = {
 	} 
 }
 
-client.push(task_02).then(res => console.log(res))
+queue.push(task_02).then(res => console.log(res))
 ```
 
 #### #3. Execute Later
@@ -143,7 +143,7 @@ const task_04 = {
 	} 
 }
 
-client.push(task_04).then(res => console.log(res))
+queue.push(task_04).then(res => console.log(res))
 ```
 
 #### #4. Execute Only Once
@@ -161,24 +161,12 @@ const task_05 = {
 	} 
 }
 
-client.push(task_05).then(res => console.log(res))
-client.push(task_05).then(res => console.log(res))
+queue.push(task_05).then(res => console.log(res))
+queue.push(task_05).then(res => console.log(res)).catch(err => console.log(err.message))
 ```
 
-The second push will return an HTTP response (not throw an exception) similar to this:
+The second `push` will throw an exception similar to `Requested entity already exists`.
 
-```js
-{
- "status": 409,
- "data": {
-  "error": {
-   "code": 409,
-   "message": "Requested entity already exists",
-   "status": "ALREADY_EXISTS"
-  }
- }
-}
-```
 
 # This Is What We re Up To
 We are Neap, an Australian Technology consultancy powering the startup ecosystem in Sydney. We simply love building Tech and also meeting new people, so don't hesitate to connect with us at [https://neap.co](https://neap.co).

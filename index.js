@@ -90,12 +90,22 @@ const createClient = ({ queue, method, pathname, jsonKeyFile}) => {
 			else
 				throw e
 		})
+		.then(({ status, data }) => {
+			if (status >= 200 && status < 300)
+				return { status, data }
+			else {
+				const message = data && data.error && data.error.message ? data.error.message : `error: ${status}`
+				let e = new Error(message)
+				e.data = data || {}
+				throw e
+			}
+		})
 
 	return {
 		/**
 		 * [description]
 		 * @param  {Object}  taskData 					Task payload
-		 * @param  {Number}  options.retryCatch 		If sepcified, this function will deal with managing exception in case
+		 * @param  {Number}  options.retryCatch 		If specified, this function will deal with managing exception in case
 		 *                                        		the retry attempts all fail. If this option is not specified,  
 		 * @type {[type]}
 		 */
@@ -120,7 +130,10 @@ const createClient = ({ queue, method, pathname, jsonKeyFile}) => {
 			return collection.batch(batchData, batchSize).reduce((runJob, taskDataBatch) => 
 				runJob.then(() => {
 					const start = Date.now()
-					return Promise.all(taskDataBatch.map(t => retryPush(t))).then(() => {
+					return Promise.all(taskDataBatch.map(t => retryPush(t).catch(err => {
+						if (err && err.message && err.message.toLowerCase().indexOf('lacks iam permission') >= 0)
+							throw err
+					}))).then(() => {
 						if (options.debug)
 							console.log(`Batch with ${taskDataBatch.length} tasks has been enqueued in ${((Date.now() - start)/1000).toFixed(2)} seconds`)
 					})
@@ -131,7 +144,11 @@ const createClient = ({ queue, method, pathname, jsonKeyFile}) => {
 	}
 }
 
-module.exports = createClient
+module.exports = {
+	client: {
+		new: createClient
+	}
+}
 
 
 
