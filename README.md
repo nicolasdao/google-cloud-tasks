@@ -47,7 +47,6 @@ Before using this package, you must first:
 	- `asia-northeast1`
 
 ## Show Me The Code
-### Basic Example
 
 ```js
 const { join } = require('path')
@@ -120,6 +119,31 @@ queue.task('service-01').send(task_01, { id:1, headers: { Custom: 'some other da
 // NOTICE: 	In the example, the second argument of the 'send' method is not an object anymore, but a function. This function 
 // 			is supposed to return an object.
 queue.task('service-01').send(task_01, t => ({ id: t.otherData.age, headers: { Custom: 'some other data' } }))
+	.then(({ status, data }) => console.log({ status, data }))
+```
+
+## How To Test Locally
+
+Because the task queue is nothing but a queue sitting in front of a real web server, there is very little difference between sending messages to the queue or directly to the underlying HTTP endpoint. The only real difference is that hitting the underlying HTTP endpoint will be immediate instead of being scheduled by the queue. Being able to bypass the queue is usually useful during the design or testing phase. Here is an example on how you can send messages directly to the underlying HTTP endpoint:
+
+```js
+const queue = client.new({
+	name: 'your-queue-name',								// Required
+	jsonKeyFile: join(__dirname, './service-account.json'),	// Required
+	byPassConfig: {
+		service: 'http://localhost:4000'
+	}
+})
+
+const task_01 = {  
+	name: 'task #1', 
+	otherData: {
+		age: 23
+	} 
+}
+
+// Sending a single task using a 'POST' to 'http://localhost:4000/service-01' bypassing the queue 'your-queue-name'.
+queue.task('service-01').send(task_01)
 	.then(({ status, data }) => console.log({ status, data }))
 ```
 

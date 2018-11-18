@@ -12,6 +12,12 @@ const postData = (url, headers={}, body) => Promise.resolve(null).then(() => {
 		.then(res => res.json().then(data => ({ status: res.status, data })))
 })
 
+const getData = (url, headers={}) => Promise.resolve(null).then(() => {
+	return fetch(url, { method: 'GET', headers })
+		.then(res => res.json().then(data => ({ status: res.status, data })))
+})
+
 module.exports = {
-	post: postData
+	post: postData,
+	'get': getData
 }

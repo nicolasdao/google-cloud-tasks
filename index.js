@@ -7,7 +7,7 @@
 */
 
 const googleAuth = require('google-auto-auth')
-const { fetch, promise: { retry }, collection, obj: { merge } } = require('./utils')
+const { fetch, promise: { retry }, collection, obj: { merge }, validate } = require('./utils')
 
 const ERR_INVALID_SCHEDULE_CODE = 589195462987
 
@@ -19,13 +19,15 @@ const _validateRequiredParams = (params={}) => Object.keys(params).forEach(p => 
 		throw new Error(`Parameter '${p}' is required.`)
 })
 
-const pushTask = ({ projectId, locationId, queueName, token, method, pathname, headers, body, id, schedule }) => Promise.resolve(null).then(() => {
+const pushTask = ({ projectId, locationId, queueName, token, method, pathname, headers, body, id, schedule, serviceUrl }) => Promise.resolve(null).then(() => {
 	_validateRequiredParams({ projectId, locationId, queueName, token, method })
 	const m = method.toUpperCase()
+	const pname = `/${(pathname || '').replace(/^\//, '')}`
+	const service = serviceUrl ? `${serviceUrl.replace(/\/$/, '')}${pname}` : null
 	let request = {
 		headers,
 		httpMethod: m,
-		relativeUri: `/${(pathname || '').replace(/^\//, '')}`
+		relativeUri: pname
 	}
 	if (m != 'GET' && body)
 		request.body = Buffer.from(JSON.stringify(body)).toString('base64')
@@ -42,19 +44,28 @@ const pushTask = ({ projectId, locationId, queueName, token, method, pathname, h
 	if (schedule)
 		payload.task.scheduleTime = schedule
 
-	return fetch.post(APP_ENG_PUSH_TASK_URL(projectId, locationId, queueName), {
-		Accept: 'application/json',
-		Authorization: `Bearer ${token}`
-	}, JSON.stringify(payload))
+	if (service) 
+		return (m == 'GET' ? fetch.get : fetch.post)(service, {
+			Accept: 'application/json',
+			Authorization: `Bearer ${token}`
+		}, JSON.stringify(body||{}))
+	else
+		return fetch.post(APP_ENG_PUSH_TASK_URL(projectId, locationId, queueName), {
+			Accept: 'application/json',
+			Authorization: `Bearer ${token}`
+		}, JSON.stringify(payload))
 })
 
 const _getJsonKey = jsonKeyFile => require(jsonKeyFile)
 
 const HTTP_METHODS = { 'GET': true, 'POST': true, 'PUT': true, 'DELETE': true, 'PATCH': true, 'OPTIONS': true, 'HEAD': true }
-const createClient = ({ name, method, pathname, headers={}, jsonKeyFile, mockFn }) => {
+const createClient = ({ name, method, pathname, headers={}, jsonKeyFile, mockFn, byPassConfig={} }) => {
 	const { getJsonKey: _mockGetJsonKey, pushTask: _mockPushTask, getToken: _mockGetToken } = mockFn || {}
 	const getTheToken = _mockGetToken || getToken
 	const pushTheTask = _mockPushTask || pushTask
+	const { service:serviceUrl } = byPassConfig
+	if (serviceUrl && !validate.url(serviceUrl))
+		throw new Error(`Invalid argument exception. 'byPassConfig.service' ${serviceUrl} is an invalid URL.`)
 
 	const queue = name
 	_validateRequiredParams({ queue, jsonKeyFile })
@@ -119,7 +130,8 @@ const createClient = ({ name, method, pathname, headers={}, jsonKeyFile, mockFn 
 				method: _method || method,
 				pathname: _pathname || pathname, 
 				headers: h,
-				body
+				body,
+				serviceUrl
 			}))
 	}
 
