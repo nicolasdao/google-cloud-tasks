@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+<a name="0.3.0"></a>
+# [0.3.0](https://github.com/nicolasdao/google-cloud-tasks/compare/v0.2.1...v0.3.0) (2018-11-18)
+
+
+### Features
+
+* Add support for new API style ([2cf08df](https://github.com/nicolasdao/google-cloud-tasks/commit/2cf08df))
+
+
+
 <a name="0.2.1"></a>
 ## [0.2.1](https://github.com/nicolasdao/google-cloud-tasks/compare/v0.2.0...v0.2.1) (2018-11-15)
 
