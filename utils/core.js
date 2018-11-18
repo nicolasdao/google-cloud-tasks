@@ -79,8 +79,8 @@ const sortBy = (obj, fn = x => x, dir='asc') => Array.isArray(obj) ? _arraySortB
 const newSeed = (size=0) => Array.apply(null, Array(size))
 const mergeObj = (...objs) => objs.reduce((acc, obj) => { //Object.assign(...objs.map(obj => JSON.parse(JSON.stringify(obj))))
 	obj = obj || {}
-	if (typeof(obj) != 'object' || Array.isArray(obj))
-		throw new Error('Invalid argument exception. Merging objects only support object arguments. No arrays, primitive types, or non-truthy entities are allowed.')
+	if (typeof(obj) != 'object' || Array.isArray(obj) || (obj instanceof Date))
+		return acc
 
 	Object.keys(obj).forEach(property => {
 		const val = obj[property]

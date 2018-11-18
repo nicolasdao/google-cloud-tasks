@@ -7,7 +7,9 @@
 */
 
 const googleAuth = require('google-auto-auth')
-const { fetch, promise: { retry }, collection } = require('./utils')
+const { fetch, promise: { retry }, collection, obj: { merge } } = require('./utils')
+
+const ERR_INVALID_SCHEDULE_CODE = 589195462987
 
 const getToken = auth => new Promise((onSuccess, onFailure) => auth.getToken((err, token) => err ? onFailure(err) : onSuccess(token)))
 const APP_ENG_PUSH_TASK_URL = (projectId, locationId, queueName) => `https://cloudtasks.googleapis.com/v2beta3/projects/${projectId}/locations/${locationId}/queues/${queueName}/tasks`
@@ -46,15 +48,23 @@ const pushTask = ({ projectId, locationId, queueName, token, method, pathname, h
 	}, JSON.stringify(payload))
 })
 
+const _getJsonKey = jsonKeyFile => require(jsonKeyFile)
+
 const HTTP_METHODS = { 'GET': true, 'POST': true, 'PUT': true, 'DELETE': true, 'PATCH': true, 'OPTIONS': true, 'HEAD': true }
-const createClient = ({ queue, method, pathname, jsonKeyFile}) => {
-	_validateRequiredParams({ queue, method, jsonKeyFile })
-	method = method.trim().toUpperCase()
+const createClient = ({ name, method, pathname, headers={}, jsonKeyFile, mockFn }) => {
+	const { getJsonKey: _mockGetJsonKey, pushTask: _mockPushTask, getToken: _mockGetToken } = mockFn || {}
+	const getTheToken = _mockGetToken || getToken
+	const pushTheTask = _mockPushTask || pushTask
+
+	const queue = name
+	_validateRequiredParams({ queue, jsonKeyFile })
+	method = (method || 'GET').trim().toUpperCase() 
+	pathname = pathname || '/'
 	
 	if (!HTTP_METHODS[method])
 		throw new Error(`Invalid argument exception. Method '${method}' is not a valid HTTP method.`)
 
-	const { location_id, project_id } = require(jsonKeyFile)
+	const { location_id, project_id } = (_mockGetJsonKey || _getJsonKey)(jsonKeyFile)
 	
 	if (!project_id)
 		throw new Error(`Missing required 'project_id' property. This property should be present inside the service account json file ${jsonKeyFile}.`)
@@ -67,23 +77,57 @@ const createClient = ({ queue, method, pathname, jsonKeyFile}) => {
 	})
 
 	const push = taskData => { 
-		const { id, method:_method, schedule, pathname:_pathname, headers={}, body={} } = taskData
-		return getToken(auth)
-			.then(token => pushTask({
+		const { id, method:_method, schedule, pathname:_pathname, headers:_header={}, body={} } = taskData
+		const h = merge(headers, _header)
+		let s
+		if (schedule) {
+			const scheduleType = typeof(schedule)
+			if (schedule instanceof Date)
+				s = schedule.toISOString()
+			else if (scheduleType == 'string') {
+				const d = new Date(schedule)
+				if (d.toString().toLowerCase() == 'invalid date') {
+					let e = new Error(`Invalid argument exception. 'schedule' ${schedule} is an invalid date`)
+					e.code = ERR_INVALID_SCHEDULE_CODE
+					throw e
+				}
+				s = d.toISOString()
+			} else if (scheduleType == 'number') {
+				const ref = Date.now() + 5000
+				const n = ref > schedule ? ref : schedule
+				const d = new Date(n)
+				if (d.toString().toLowerCase() == 'invalid date') {
+					let e = new Error(`Invalid argument exception. 'schedule' ${schedule} is an invalid date`)
+					e.code = ERR_INVALID_SCHEDULE_CODE
+					throw e
+				}
+				s = d.toISOString()
+			} else {
+				let e = new Error(`Invalid argument exception. 'schedule' ${schedule} is an invalid date`)
+				e.code = ERR_INVALID_SCHEDULE_CODE
+				throw e
+			}
+		}
+		return getTheToken(auth)
+			.then(token => pushTheTask({
 				id,
-				schedule,
+				schedule: s,
 				projectId: project_id, 
 				locationId: location_id, 
 				queueName: queue, 
 				token, 
 				method: _method || method,
 				pathname: _pathname || pathname, 
-				headers,
+				headers: h,
 				body
 			}))
 	}
 
-	const retryPush = (taskData, options={}) => retry(() => push(taskData), () => true, { ignoreFailure: true, retryInterval: 800 })
+	const retryPush = (taskData, options={}) => retry(
+		() => push(taskData), 
+		() => true, 
+		err => !(err && err.code == ERR_INVALID_SCHEDULE_CODE),
+		{ ignoreFailure: true, retryInterval: 800 })
 		.catch(e => {
 			if (options.retryCatch)
 				return options.retryCatch(e)
@@ -101,7 +145,7 @@ const createClient = ({ queue, method, pathname, jsonKeyFile}) => {
 			}
 		})
 
-	return {
+	const service = {
 		/**
 		 * [description]
 		 * @param  {Object}  taskData 					Task payload
@@ -131,16 +175,72 @@ const createClient = ({ queue, method, pathname, jsonKeyFile}) => {
 				runJob.then(() => {
 					const start = Date.now()
 					return Promise.all(taskDataBatch.map(t => retryPush(t).catch(err => {
-						if (err && err.message && err.message.toLowerCase().indexOf('lacks iam permission') >= 0)
+						if (err && err.message && err.message.toLowerCase().indexOf('lacks iam permission') >= 0) 
 							throw err
-					}))).then(() => {
+						return { status: 500, data: t, error: err }
+					}))).then(values => {
 						if (options.debug)
 							console.log(`Batch with ${taskDataBatch.length} tasks has been enqueued in ${((Date.now() - start)/1000).toFixed(2)} seconds`)
+						return values.reduce((acc,{ data, error }) => {
+							if (!error && data)
+								acc.data.push(data)
+							else if (error)
+								acc.errors.push({ task: data, message: error.message })
+							return acc
+						}, { status: 200, data:[], errors:[] })
 					})
 				}), 
 			Promise.resolve(null))
-				.then(() => ({ status: 200, data: {} }))
 		})
+	}
+
+	return {
+		push: service.push,
+		batch: service.batch,
+		task: (pathName, options={}) => {
+			const pathNameIsOptions = typeof(pathName) == 'object'
+			const { method:_method, headers:_headers } = pathNameIsOptions ? pathName : (options || {})
+			const p = pathNameIsOptions ? pathname : (pathName || pathname)
+			return {
+				send: (task, options={}) => Promise.resolve(null).then(() => {
+					const optionsType = typeof(options)
+					const optionsIsFn = optionsType == 'function'
+					if (optionsType != 'object' && !optionsIsFn)
+						throw new Error('Invalid argument exception. \'options\' must either be an object or a function returning an object.')
+
+					const optionsFn = optionsIsFn ? options : () => options
+					const getParams = t => {
+						const { id, headers:__headers, schedule } = optionsFn(t) || {} 
+						const h = merge(headers, _headers, __headers)
+						return { id, schedule, headers: h }
+					}
+					
+					if (Array.isArray(task))
+						return service.batch(task.map(t => {
+							const { id, schedule, headers } = getParams(t)
+							return {
+								id, 
+								method: _method || method, 
+								schedule, 
+								pathname: p, 
+								headers, 
+								body: t
+							}
+						}), options)
+					else {
+						const { id, schedule, headers } = getParams(task)
+						return service.push({
+							id, 
+							method: _method || method, 
+							schedule, 
+							pathname: p, 
+							headers, 
+							body: task
+						}, options)
+					}
+				})
+			}
+		}
 	}
 }
 

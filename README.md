@@ -54,119 +54,74 @@ const { join } = require('path')
 const { client } = require('google-cloud-tasks')
 
 const queue = client.new({
-	queue: 'your-queue-name',
-	method: 'POST',
-	pathname: '/',
-	jsonKeyFile: join(__dirname, './service-account.json')
+	name: 'your-queue-name',								// Required
+	method: 'POST',             							// Optional. Default 'GET'
+	headers: {												// Optional. Default {}
+		Accept: 'application/json'
+	},
+	jsonKeyFile: join(__dirname, './service-account.json')	// Required
 })
 
-const createArray = (size=0) => Array.apply(null, Array(size))
-
-// Push a single task to the queue
-const task_01 = { 
-	body: { 
-		name: 'task #1', 
-		otherData: {} 
+const task_01 = {  
+	name: 'task #1', 
+	otherData: {
+		age: 23
 	} 
 }
 
-queue.push(task_01).then(res => console.log(res))
-
-// Push a 100 tasks to the queue
-const batchOfTasks = createArray(100).map((x,id) => ({ 
-	body: {
-		id,  
-		name: `task #${id}`,
-		otherData: {}
-	}
-}))
-
-queue.batch(batchOfTasks).then(res => console.log(res))
-```
-
-### Intermediate Examples
-#### #1. Override The Default Client Config
-
-The following example overrides the default `'POST'` method and `'/'` pathname:
-
-```js
-const task_02 = { 
-	method: 'GET',
-	pathname: '/?message=hello'
-	body: { 
-		name: 'task #1', 
-		otherData: {} 
+const task_02 = {  
+	name: 'task #2', 
+	otherData: {
+		age: 32
 	} 
 }
 
-queue.push(task_02).then(res => console.log(res))
+// Sending a single task to queue 'your-queue-name' using a 'POST' at the pathname 'service-01'
+// with headers 'Accept: application/json'
+queue.task('service-01').send(task_01)
+	.then(({ status, data }) => console.log({ status, data }))
+
+// Sending multiple tasks to queue 'your-queue-name' using a 'POST' at the pathname 'service-01'
+// with headers 'Accept: application/json'
+queue.task('service-01').send([task_01, task_02])
+	.then(({ status, data, errors }) => console.log({ status, data, errors })) 	// data is an response array for each successfull task sent
+																				// errors is an response array for each failed task
+
+// Sending a single task to queue 'your-queue-name' using a 'POST' at the pathname '/'
+// with headers 'Accept: application/json'
+queue.task().send(task_01)
+	.then(({ status, data }) => console.log({ status, data }))
+
+// Sending a single task to queue 'your-queue-name' using a 'POST' at the pathname 'service-01'
+// with headers 'Accept: application/json' and 'Authorization: 123'
+queue.task('service-01', { headers: { Authorization: '123' } }).send(task_01)
+	.then(({ status, data }) => console.log({ status, data }))
+
+// Sending a single task to queue 'your-queue-name' using a 'POST' at the pathname 'service-01'
+// with headers 'Accept: application/json', 'Authorization: 123' and 'Custom: some other data'
+queue.task('service-01', { headers: { Authorization: '123' } }).send(task_01, { headers: { Custom: 'some other data' } })
+	.then(({ status, data }) => console.log({ status, data }))
+
+// Delaying to send a single task to queue 'your-queue-name' using a 'POST' at the pathname 'service-01'
+// with headers 'Accept: application/json' and 'Custom: some other data' to the 1st of Feb 2020
+queue.task('service-01').send(task_01, { schedule: new Date(2020,1,1), headers: { Custom: 'some other data' }})
+	.then(({ status, data }) => console.log({ status, data }))
+
+// Preventing to send the same task more than once to queue 'your-queue-name' using a 'POST' at the pathname 'service-01'
+// with headers 'Accept: application/json' and 'Custom: some other data'. This is done by explicitely settin the task id. 
+// That id must be unique. The second task will fail because the task with id 1 will already been added.
+queue.task('service-01').send(task_01, { id:1, headers: { Custom: 'some other data' }})
+	.then(({ status, data }) => console.log({ status, data }))
+queue.task('service-01').send(task_01, { id:1, headers: { Custom: 'some other data' }})
+	.then(({ status, data }) => console.log({ status, data }))
+
+// Sending a single task to queue 'your-queue-name' using a 'POST' at the pathname 'service-01'
+// with headers 'Accept: application/json' and 'Custom: some other data'. Explicitely setting the task id based on the task payload.
+// NOTICE: 	In the example, the second argument of the 'send' method is not an object anymore, but a function. This function 
+// 			is supposed to return an object.
+queue.task('service-01').send(task_01, t => ({ id: t.otherData.age, headers: { Custom: 'some other data' } }))
+	.then(({ status, data }) => console.log({ status, data }))
 ```
-
-#### #2. Add Custom Headers
-
-The following example overrides the default `'POST'` method and `'/'` pathname:
-
-```js
-const task_02 = { 
-	method: 'GET',
-	pathname: '/?message=hello',
-	headers: {
-		hello: 'world'
-	},
-	body: { 
-		name: 'task #1', 
-		otherData: {} 
-	} 
-}
-
-queue.push(task_02).then(res => console.log(res))
-```
-
-#### #3. Execute Later
-
-The following example shows how to schedule a task for a later execution:
-
-```js
-const addMinutesToDate = (d, v=0) => {
-	const t = new Date(d)
-	t.setMinutes(d.getMinutes() + v)
-	return t
-}
-
-const task_04 = { 
-	method: 'GET',
-	pathname: '/?message=hello'
-	schedule: addMinutesToDate(new Date(), 1).toISOString(),
-	body: { 
-		name: 'task #1', 
-		otherData: {} 
-	} 
-}
-
-queue.push(task_04).then(res => console.log(res))
-```
-
-#### #4. Execute Only Once
-
-The following example shows how to execute a task only once:
-
-```js
-const task_05 = { 
-	id: 1,
-	method: 'GET',
-	pathname: '/?message=hello'
-	body: { 
-		name: 'task #1', 
-		otherData: {} 
-	} 
-}
-
-queue.push(task_05).then(res => console.log(res))
-queue.push(task_05).then(res => console.log(res)).catch(err => console.log(err.message))
-```
-
-The second `push` will throw an exception similar to `Requested entity already exists`.
-
 
 # This Is What We re Up To
 We are Neap, an Australian Technology consultancy powering the startup ecosystem in Sydney. We simply love building Tech and also meeting new people, so don't hesitate to connect with us at [https://neap.co](https://neap.co).
