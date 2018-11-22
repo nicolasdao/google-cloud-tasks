@@ -628,10 +628,10 @@ describe('client', () => {
 
 			return Promise.all([queue
 				.task('service-01', { headers: { Authorization: 'bearer: 12334' } })
-				.send(task_01, { headers: { someOther: 'header' }, schedule: new Date(2100,1,1) }),
+				.send(task_01, { headers: { someOther: 'header' }, schedule: new Date(4105083600000) }),
 			queue
 				.task({ headers: { Authorization: 'bearer: 12334' } })
-				.send(task_01, { headers: { someOther: 'header' }, schedule: new Date(2100,1,1) })])
+				.send(task_01, { headers: { someOther: 'header' }, schedule: new Date(4105083600000) })])
 				.then(([{ data:data_01 }, { data:data_02 }]) => {
 					
 					assert.isNotOk(data_01.id, '01')
