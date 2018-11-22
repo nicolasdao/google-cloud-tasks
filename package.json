@@ -1,6 +1,6 @@
 {
   "name": "google-cloud-tasks",
-  "version": "0.3.2",
+  "version": "0.3.3",
   "description": "Nodejs package to push tasks to Google Cloud Tasks (beta). Include pushing batches.",
   "main": "index.js",
   "repository": {
