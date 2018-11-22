@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+<a name="0.3.4"></a>
+## [0.3.4](https://github.com/nicolasdao/google-cloud-tasks/compare/v0.3.3...v0.3.4) (2018-11-22)
+
+
+### Bug Fixes
+
+* unit test is failing because of wrong UTC format ([d4ea953](https://github.com/nicolasdao/google-cloud-tasks/commit/d4ea953))
+
+
+
 <a name="0.3.3"></a>
 ## [0.3.3](https://github.com/nicolasdao/google-cloud-tasks/compare/v0.3.2...v0.3.3) (2018-11-22)
 
