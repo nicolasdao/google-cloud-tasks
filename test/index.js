@@ -145,7 +145,7 @@ describe('client', () => {
 			const task_01 = { 
 				id: 1,
 				method: 'POST',
-				schedule: new Date(2100, 1,1),
+				schedule: new Date(4105083600000),
 				pathname: '/another-path',
 				headers: {
 					someMore: 'headers'
@@ -406,7 +406,7 @@ describe('client', () => {
 			const task_01 = { 
 				id: 1,
 				method: 'POST',
-				schedule: new Date(2100, 1,1),
+				schedule: new Date(4105083600000),
 				pathname: '/another-path',
 				headers: {
 					someMore: 'headers'
@@ -421,7 +421,7 @@ describe('client', () => {
 			const task_02 = { 
 				id: 2,
 				method: 'PUT',
-				schedule: new Date(2200, 1,1),
+				schedule: new Date(7260757200000),
 				pathname: '/another-path',
 				headers: {
 					someMore2: 'headers2'
@@ -500,7 +500,7 @@ describe('client', () => {
 			const task_02 = { 
 				id: 2,
 				method: 'PUT',
-				schedule: new Date(2200, 1,1),
+				schedule: new Date(7260757200000),
 				pathname: '/another-path',
 				headers: {
 					someMore2: 'headers2'
