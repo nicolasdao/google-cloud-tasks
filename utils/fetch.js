@@ -9,12 +9,12 @@ const fetch = require('node-fetch')
 
 const postData = (url, headers={}, body) => Promise.resolve(null).then(() => {
 	return fetch(url, { method: 'POST', headers, body })
-		.then(res => res.json().then(data => ({ status: res.status, data })))
+		.then(res => res.json().catch(() => res.text().catch(() => res)).then(data => ({ status: res.status, data })))
 })
 
 const getData = (url, headers={}) => Promise.resolve(null).then(() => {
 	return fetch(url, { method: 'GET', headers })
-		.then(res => res.json().then(data => ({ status: res.status, data })))
+		.then(res => res.json().catch(() => res.text().catch(() => res)).then(data => ({ status: res.status, data })))
 })
 
 module.exports = {
