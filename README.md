@@ -147,6 +147,24 @@ queue.task('service-01').send(task_01)
 	.then(({ status, data }) => console.log({ status, data }))
 ```
 
+## Other Utilities
+### Test If An HTTP Request Is From Cloud Task Or CRON
+
+```js
+const { utils: { isTaskRequest, isCronRequest } } = require('google-cloud-tasks')
+
+app.get('/', (req,res) => {
+	const message = 
+		isTaskRequest(req) ? `I'm a Cloud Task request` : 
+		isCronRequest(req) ? `I'm a CRON request` : `I'm a standard request` 
+
+	res.status(200).send(message)
+})
+```
+
+> Note: Both `isTaskRequest` and `isCronRequest` accept either a request (e.g., { headers: { ... } }) object or a headers object (e.g., { ... }).
+The way those 2 methods work is straighforward. They look for the existence of those 2 headers in the request: `'x-appengine-queuename'` and `'x-appengine-taskname'`. If those 2 headers are both present, the request is either a CRON or a Cloud Task request. A CRON request is one with a `'x-appengine-queuename'`	 equal to `'__cron'`.
+
 # This Is What We re Up To
 We are Neap, an Australian Technology consultancy powering the startup ecosystem in Sydney. We simply love building Tech and also meeting new people, so don't hesitate to connect with us at [https://neap.co](https://neap.co).
 
