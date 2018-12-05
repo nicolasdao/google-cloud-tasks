@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+<a name="0.3.6"></a>
+## [0.3.6](https://github.com/nicolasdao/google-cloud-tasks/compare/v0.3.5...v0.3.6) (2018-12-05)
+
+
+### Features
+
+* Add support to detect whether an HTTP request is from a CRON job or a Task Queue ([0230353](https://github.com/nicolasdao/google-cloud-tasks/commit/0230353))
+
+
+
 <a name="0.3.5"></a>
 ## [0.3.5](https://github.com/nicolasdao/google-cloud-tasks/compare/v0.3.4...v0.3.5) (2018-11-25)
 
