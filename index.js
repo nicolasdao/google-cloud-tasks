@@ -48,24 +48,33 @@ const pushTask = ({ projectId, locationId, queueName, token, method, pathname, h
 		return (m == 'GET' ? fetch.get : fetch.post)(service, {
 			Accept: 'application/json',
 			Authorization: `Bearer ${token}`
-		}, JSON.stringify(body||{}))
-	else
-		return fetch.post(APP_ENG_PUSH_TASK_URL(projectId, locationId, queueName), {
+		}, JSON.stringify(body||{})).then(res => {
+			res.request = { method: m, uri: service }
+			return res
+		})
+	else {
+		const taskUri = APP_ENG_PUSH_TASK_URL(projectId, locationId, queueName)
+		return fetch.post(taskUri, {
 			Accept: 'application/json',
 			Authorization: `Bearer ${token}`
-		}, JSON.stringify(payload))
+		}, JSON.stringify(payload)).then(res => {
+			res.request = { method: 'POST', uri: taskUri }
+			return res
+		})
+	}
 })
 
 const _getJsonKey = jsonKeyFile => require(jsonKeyFile)
 
 const HTTP_METHODS = { 'GET': true, 'POST': true, 'PUT': true, 'DELETE': true, 'PATCH': true, 'OPTIONS': true, 'HEAD': true }
 const createClient = ({ name, method, pathname, headers={}, jsonKeyFile, mockFn, byPassConfig={} }) => {
-	const { getJsonKey: _mockGetJsonKey, pushTask: _mockPushTask, getToken: _mockGetToken } = mockFn || {}
-	const getTheToken = _mockGetToken || getToken
-	const pushTheTask = _mockPushTask || pushTask
 	const { service:serviceUrl } = byPassConfig
 	if (serviceUrl && !validate.url(serviceUrl))
 		throw new Error(`Invalid argument exception. 'byPassConfig.service' ${serviceUrl} is an invalid URL.`)
+
+	const { getJsonKey: _mockGetJsonKey, pushTask: _mockPushTask, getToken: _mockGetToken } = mockFn || {}
+	const getTheToken = serviceUrl ? (() => Promise.resolve('dev-token-1234')) : (_mockGetToken || getToken)
+	const pushTheTask = _mockPushTask || pushTask
 
 	const queue = name
 	_validateRequiredParams({ queue, jsonKeyFile })
@@ -146,11 +155,17 @@ const createClient = ({ name, method, pathname, headers={}, jsonKeyFile, mockFn,
 			else
 				throw e
 		})
-		.then(({ status, data }) => {
+		.then(({ status, data, request }) => {
 			if (status >= 200 && status < 300)
 				return { status, data }
 			else {
-				const message = data && data.error && data.error.message ? data.error.message : `error: ${status}`
+				let message = request && request.method && request.uri 
+					? `Pushing task to queue '${name}' using an HTTP ${request.method} to ${request.uri} failed with HTTP code ${status}`
+					: `Pushing task to queue '${name}' failed with HTTP code ${status}`
+
+				if (data && data.error && data.error.message)
+					message = `${message}\nDetails: ${data.error.message}`
+				
 				let e = new Error(message)
 				e.data = data || {}
 				throw e
