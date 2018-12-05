@@ -256,9 +256,35 @@ const createClient = ({ name, method, pathname, headers={}, jsonKeyFile, mockFn,
 	}
 }
 
+const isHeadersFromCloudTask = headers => {
+	headers = headers || {}
+	const queueName = headers['x-appengine-queuename']
+	return headers['x-appengine-taskname'] && (queueName && queueName != '__cron') ? true : false
+}
+
+const isHeadersFromCron = headers => {
+	headers = headers || {}
+	const queueName = headers['x-appengine-queuename']
+	return headers['x-appengine-taskname'] && (queueName && queueName == '__cron') ? true : false
+}
+
+const isRequestFromCloudTask = req => {
+	req = req || {}
+	return isHeadersFromCloudTask(req.headers) || isHeadersFromCloudTask(req)
+}
+
+const isRequestFromCron = req => {
+	req = req || {}
+	return isHeadersFromCron(req.headers) || isHeadersFromCron(req)
+}
+
 module.exports = {
 	client: {
 		new: createClient
+	},
+	utils: {
+		isTaskRequest: isRequestFromCloudTask,
+		isCronRequest: isRequestFromCron
 	}
 }
 
