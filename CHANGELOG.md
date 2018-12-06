@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+<a name="0.4.0"></a>
+# [0.4.0](https://github.com/nicolasdao/google-cloud-tasks/compare/v0.3.7...v0.4.0) (2018-12-06)
+
+
+### Features
+
+* Add support for listing pending tasks and testing if pending tasks exists ([d85c5d4](https://github.com/nicolasdao/google-cloud-tasks/commit/d85c5d4))
+
+
+
 <a name="0.3.7"></a>
 ## [0.3.7](https://github.com/nicolasdao/google-cloud-tasks/compare/v0.3.6...v0.3.7) (2018-12-05)
 
