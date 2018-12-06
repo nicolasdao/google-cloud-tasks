@@ -5,6 +5,10 @@ __*Google Cloud Tasks*__ is node.js package to push tasks to Google Cloud Tasks 
 
 > * [Install](#install) 
 > * [How To Use It](#how-to-use-it) 
+>    * [Prerequisite](#prerequisite)
+>    * [Show Me The Code](#show-me-the-code)
+>    * [How To Test Locally](#how-to-test-locally)
+>    * [Other Utilities](#other-utilities)
 > * [About Neap](#this-is-what-we-re-up-to)
 > * [License](#license)
 
@@ -35,6 +39,7 @@ Before using this package, you must first:
 5. Have a Service Account set up with the following 2 roles:
 	- `roles/appengine.appViewer`
 	- `roles/cloudtasks.enqueuer`
+	- `roles/cloudtasks.viewer`
 
 6. Get the JSON keys file for that Service Account above
 
@@ -148,7 +153,46 @@ queue.task('service-01').send(task_01)
 ```
 
 ## Other Utilities
-### Test If An HTTP Request Is From Cloud Task Or CRON
+### Listing all the pending tasks
+> WARNING: Only scan up to 30,000 tasks. If there are more, these APIs will return incomplete results.
+
+List all tasks for that queue
+```js
+queue.task().list().then(tasks => console.log(tasks))
+```
+
+Only list the tasks for the specific pathname 'service-01' in that queue
+```js
+queue.task('service-01').list().then(tasks => console.log(tasks))
+```
+
+### Finding a specific task
+> WARNING: Only scan up to 30,000 tasks. If there are more, these APIs will return incomplete results.
+
+Return the first task that matches the task predicate (a task contains the following property: `id`, `method`, `pathname`, `schedule` and `created`)
+```js
+queue.task().find(({ id }) => /^123/.test(id)).then(task => console.log(task))
+```
+
+Does the same as above, but only for tasks with a pathname equal to 'service-01'
+```js
+queue.task('service-01').find(({ id }) => /^123/.test(id)).then(task => console.log(task))
+```
+
+### Testing if a task exists
+> WARNING: Only scan up to 30,000 tasks. If there are more, these APIs will return incomplete results.
+
+Return the first task that matches the task predicate (a task contains the following property: `id`, `method`, `pathname`, `schedule` and `created`)
+```js
+queue.task().some(({ id }) => /^123/.test(id)).then(yes => console.log(yes))
+```
+
+Does the same as above, but only for tasks with a pathname equal to 'service-01'
+```js
+queue.task('service-01').some(({ id }) => /^123/.test(id)).then(yes => console.log(yes))
+```
+
+### Testind if an http request is from Cloud Task Or CRON
 
 ```js
 const { utils: { isTaskRequest, isCronRequest } } = require('google-cloud-tasks')

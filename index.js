@@ -7,61 +7,16 @@
 */
 
 const googleAuth = require('google-auto-auth')
-const { fetch, promise: { retry }, collection, obj: { merge }, validate } = require('./utils')
+const { promise: { retry }, collection, obj: { merge }, validate } = require('./utils')
+const { pushTask, listTasks, findTask } = require('./src/gcp')
 
 const ERR_INVALID_SCHEDULE_CODE = 589195462987
 
 const getToken = auth => new Promise((onSuccess, onFailure) => auth.getToken((err, token) => err ? onFailure(err) : onSuccess(token)))
-const APP_ENG_PUSH_TASK_URL = (projectId, locationId, queueName) => `https://cloudtasks.googleapis.com/v2beta3/projects/${projectId}/locations/${locationId}/queues/${queueName}/tasks`
 
 const _validateRequiredParams = (params={}) => Object.keys(params).forEach(p => {
 	if (!params[p])
 		throw new Error(`Parameter '${p}' is required.`)
-})
-
-const pushTask = ({ projectId, locationId, queueName, token, method, pathname, headers, body, id, schedule, serviceUrl }) => Promise.resolve(null).then(() => {
-	_validateRequiredParams({ projectId, locationId, queueName, token, method })
-	const m = method.toUpperCase()
-	const pname = `/${(pathname || '').replace(/^\//, '')}`
-	const service = serviceUrl ? `${serviceUrl.replace(/\/$/, '')}${pname}` : null
-	let request = {
-		headers,
-		httpMethod: m,
-		relativeUri: pname
-	}
-	if (m != 'GET' && body)
-		request.body = Buffer.from(JSON.stringify(body)).toString('base64')
-
-	let payload = {
-		task: { 
-			appEngineHttpRequest: request 
-		},
-		responseView: 'FULL'
-	}
-
-	if (id)
-		payload.task.name = `projects/${projectId}/locations/${locationId}/queues/${queueName}/tasks/${id}`
-	if (schedule)
-		payload.task.scheduleTime = schedule
-
-	if (service) 
-		return (m == 'GET' ? fetch.get : fetch.post)(service, {
-			Accept: 'application/json',
-			Authorization: `Bearer ${token}`
-		}, JSON.stringify(body||{})).then(res => {
-			res.request = { method: m, uri: service }
-			return res
-		})
-	else {
-		const taskUri = APP_ENG_PUSH_TASK_URL(projectId, locationId, queueName)
-		return fetch.post(taskUri, {
-			Accept: 'application/json',
-			Authorization: `Bearer ${token}`
-		}, JSON.stringify(payload)).then(res => {
-			res.request = { method: 'POST', uri: taskUri }
-			return res
-		})
-	}
 })
 
 const _getJsonKey = jsonKeyFile => require(jsonKeyFile)
@@ -225,10 +180,28 @@ const createClient = ({ name, method, pathname, headers={}, jsonKeyFile, mockFn,
 		push: service.push,
 		batch: service.batch,
 		task: (pathName, options={}) => {
+			if (pathName)
+				pathName = pathName.trim()
 			const pathNameIsOptions = typeof(pathName) == 'object'
 			const { method:_method, headers:_headers } = pathNameIsOptions ? pathName : (options || {})
 			const p = pathNameIsOptions ? pathname : (pathName || pathname)
+			const filter = pathName ? (({ pathname }) => pathname == `/${pathName.replace(/(^\/*|\/*$)/g, '')}`) : null
+
+			const find = (fn) => getTheToken(auth)
+				.then(token => {
+					if (!fn)
+						throw new Error('Missing required \'fn\' argument.')
+					if (typeof(fn) != 'function')
+						throw new Error(`Invalid argument exception. 'fn' must be a function (current: ${typeof(fn)}).`)
+
+					return findTask({ projectId: project_id, locationId: location_id, queueName: queue, token, find: fn }, { filter })
+				})
+
 			return {
+				list: () => getTheToken(auth)
+					.then(token => listTasks({ projectId: project_id, locationId: location_id, queueName: queue, token }, { filter })),
+				find,
+				some: (fn) => find(fn).then(result => result ? true : false),
 				send: (task, options={}) => Promise.resolve(null).then(() => {
 					const optionsType = typeof(options)
 					const optionsIsFn = optionsType == 'function'

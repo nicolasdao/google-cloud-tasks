@@ -1,3 +1,6 @@
 *.DS_Store
 *.orig
 node_modules/
+playground/
+service-account.json
+serviceaccount.json
