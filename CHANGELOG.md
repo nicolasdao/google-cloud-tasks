@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+<a name="0.4.1"></a>
+## [0.4.1](https://github.com/nicolasdao/google-cloud-tasks/compare/v0.4.0...v0.4.1) (2018-12-09)
+
+
+### Features
+
+* Add a random delay when pushing tasks in Dev mode in order to avoid stressing the system too much ([b0cb2c2](https://github.com/nicolasdao/google-cloud-tasks/commit/b0cb2c2))
+
+
+
 <a name="0.4.0"></a>
 # [0.4.0](https://github.com/nicolasdao/google-cloud-tasks/compare/v0.3.7...v0.4.0) (2018-12-06)
 
