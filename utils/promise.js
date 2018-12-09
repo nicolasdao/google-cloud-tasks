@@ -6,10 +6,36 @@
  * LICENSE file in the root directory of this source tree.
 */
 
-const { obj: { merge } } = require('./core')
+const { obj: { merge }, math } = require('./core')
 const { arities } = require('./functional')
 
-const delay = timeout => new Promise(onSuccess => setTimeout(onSuccess, timeout))
+/**
+ * [description]
+ * @param  {Number|[Number]} timeout 	If array, it must contain 2 numbers representing an interval used to select a random number
+ * @return {[type]}         			[description]
+ */
+const delay = timeout => Promise.resolve(null).then(() => {
+	let t = timeout || 100
+	if (Array.isArray(timeout)) {
+		if (timeout.length != 2)
+			throw new Error(`Wrong argument exception. When 'timeout' is an array, it must contain exactly 2 number items.`)
+
+		const start = timeout[0] * 1
+		const end = timeout[1] * 1
+
+		if (isNaN(start))
+			throw new Error(`Wrong argument exception. The first item of the 'timeout' array is not a number (current: ${timeout[0]})`)
+
+		if (isNaN(end))
+			throw new Error(`Wrong argument exception. The second item of the 'timeout' array is not a number (current: ${timeout[1]})`)
+
+		if (start > end)
+			throw new Error(`Wrong argument exception. The first number of the 'timeout' array must be strictly smaller than the second number (current: [${timeout[0]}, ${timeout[1]}])`)			
+
+		t = math.randomNumber(start, end)
+	}
+	return new Promise(onSuccess => setTimeout(onSuccess, t))
+})
 
 const wait = (stopWaiting, options) => Promise.resolve(null).then(() => {
 	const now = Date.now()

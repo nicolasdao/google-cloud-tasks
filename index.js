@@ -180,7 +180,7 @@ const createClient = ({ name, method, pathname, headers={}, jsonKeyFile, mockFn,
 		push: service.push,
 		batch: service.batch,
 		task: (pathName, options={}) => {
-			if (pathName)
+			if (pathName && typeof(pathName) == 'string') 
 				pathName = pathName.trim()
 			const pathNameIsOptions = typeof(pathName) == 'object'
 			const { method:_method, headers:_headers } = pathNameIsOptions ? pathName : (options || {})

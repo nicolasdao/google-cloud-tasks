@@ -1,4 +1,4 @@
-const { fetch } = require('../utils')
+const { fetch, promise: { delay } } = require('../utils')
 
 // doc: https://cloud.google.com/tasks/docs/reference/rest/
 const APP_ENG_PUSH_TASK_URL = (projectId, locationId, queueName) => `https://cloudtasks.googleapis.com/v2beta3/projects/${projectId}/locations/${locationId}/queues/${queueName}/tasks`
@@ -129,13 +129,13 @@ const pushTask = ({ projectId, locationId, queueName, token, method, pathname, h
 		payload.task.scheduleTime = schedule
 
 	if (service) 
-		return (m == 'GET' ? fetch.get : fetch.post)(service, {
+		return delay([100, 1000]).then(() => (m == 'GET' ? fetch.get : fetch.post)(service, {
 			Accept: 'application/json',
 			Authorization: `Bearer ${token}`
 		}, JSON.stringify(body||{})).then(res => {
 			res.request = { method: m, uri: service }
 			return res
-		})
+		}))
 	else {
 		const taskUri = APP_ENG_PUSH_TASK_URL(projectId, locationId, queueName)
 		return fetch.post(taskUri, {
