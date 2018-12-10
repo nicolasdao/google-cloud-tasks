@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+<a name="0.5.0"></a>
+# [0.5.0](https://github.com/nicolasdao/google-cloud-tasks/compare/v0.4.1...v0.5.0) (2018-12-10)
+
+
+### Features
+
+* Add more robust retry mechanism ([9694a59](https://github.com/nicolasdao/google-cloud-tasks/commit/9694a59))
+
+
+
 <a name="0.4.1"></a>
 ## [0.4.1](https://github.com/nicolasdao/google-cloud-tasks/compare/v0.4.0...v0.4.1) (2018-12-09)
 
