@@ -19,6 +19,16 @@ const _validateRequiredParams = (params={}) => Object.keys(params).forEach(p => 
 		throw new Error(`Parameter '${p}' is required.`)
 })
 
+const _retryFn = (fn, options={}) => retry(
+	fn, 
+	() => true, 
+	err => {
+		const throwErrorNow = err && err.message && err.message.toLowerCase().indexOf('lacks iam permission') >= 0
+		return !throwErrorNow
+	},
+	{ ignoreFailure: true, retryInterval: [500, 2000], timeOut: options.timeout || 10000 })
+
+
 const _getJsonKey = jsonKeyFile => require(jsonKeyFile)
 
 const HTTP_METHODS = { 'GET': true, 'POST': true, 'PUT': true, 'DELETE': true, 'PATCH': true, 'OPTIONS': true, 'HEAD': true }
@@ -51,7 +61,7 @@ const createClient = ({ name, method, pathname, headers={}, jsonKeyFile, mockFn,
 		scopes: ['https://www.googleapis.com/auth/cloud-platform']
 	})
 
-	const push = taskData => { 
+	const push = (taskData, options={}) => Promise.resolve(null).then(() => { 
 		const { id, method:_method, schedule, pathname:_pathname, headers:_header={}, body={} } = taskData
 		const h = merge(headers, _header)
 		let s
@@ -84,26 +94,22 @@ const createClient = ({ name, method, pathname, headers={}, jsonKeyFile, mockFn,
 			}
 		}
 		return getTheToken(auth)
-			.then(token => pushTheTask({
-				id,
-				schedule: s,
-				projectId: project_id, 
-				locationId: location_id, 
-				queueName: queue, 
-				token, 
-				method: _method || method,
-				pathname: _pathname || pathname, 
-				headers: h,
-				body,
-				serviceUrl
-			}))
-	}
-
-	const retryPush = (taskData, options={}) => retry(
-		() => push(taskData), 
-		() => true, 
-		err => !(err && err.code == ERR_INVALID_SCHEDULE_CODE),
-		{ ignoreFailure: true, retryInterval: 800 })
+			.then(token => _retryFn(
+				() => pushTheTask({
+					id,
+					schedule: s,
+					projectId: project_id, 
+					locationId: location_id, 
+					queueName: queue, 
+					token, 
+					method: _method || method,
+					pathname: _pathname || pathname, 
+					headers: h,
+					body,
+					serviceUrl
+				}),
+				options))
+	})
 		.catch(e => {
 			if (options.retryCatch)
 				return options.retryCatch(e)
@@ -111,8 +117,8 @@ const createClient = ({ name, method, pathname, headers={}, jsonKeyFile, mockFn,
 				throw e
 		})
 		.then(({ status, data, request }) => {
-			if (status >= 200 && status < 300)
-				return { status, data }
+			if (status >= 200 && status < 400)
+				return data
 			else {
 				let message = request && request.method && request.uri 
 					? `Pushing task to queue '${name}' using an HTTP ${request.method} to ${request.uri} failed with HTTP code ${status}`
@@ -120,7 +126,7 @@ const createClient = ({ name, method, pathname, headers={}, jsonKeyFile, mockFn,
 
 				if (data && data.error && data.error.message)
 					message = `${message}\nDetails: ${data.error.message}`
-				
+			
 				let e = new Error(message)
 				e.data = data || {}
 				throw e
@@ -135,11 +141,12 @@ const createClient = ({ name, method, pathname, headers={}, jsonKeyFile, mockFn,
 		 *                                        		the retry attempts all fail. If this option is not specified,  
 		 * @type {[type]}
 		 */
-		push: retryPush,
+		push,
 		/**
 		 * [description]
 		 * @param  {Array}   batchData 					Array of task payload
 		 * @param  {Number}  options.batchSize 			Default is 200
+		 * @param  {Number}  options.timeout 			Default 10,000. Used to configure the length of the retry strategy
 		 * @param  {Number}  options.retryCatch 		If sepcified, this function will deal with managing exception in case
 		 *                                        		the retry attempts all fail. If this option is not specified, a single failure
 		 *                                        		will cause the interruption of the entire batch  
@@ -156,20 +163,14 @@ const createClient = ({ name, method, pathname, headers={}, jsonKeyFile, mockFn,
 			return collection.batch(batchData, batchSize).reduce((runJob, taskDataBatch) => 
 				runJob.then(() => {
 					const start = Date.now()
-					return Promise.all(taskDataBatch.map(t => retryPush(t).catch(err => {
-						if (err && err.message && err.message.toLowerCase().indexOf('lacks iam permission') >= 0) 
-							throw err
-						return { status: 500, data: t, error: err }
-					}))).then(values => {
+					return Promise.all(taskDataBatch.map(t => push(t, options))).then(values => {
 						if (options.debug)
 							console.log(`Batch with ${taskDataBatch.length} tasks has been enqueued in ${((Date.now() - start)/1000).toFixed(2)} seconds`)
-						return values.reduce((acc,{ data, error }) => {
-							if (!error && data)
-								acc.data.push(data)
-							else if (error)
-								acc.errors.push({ task: data, message: error.message })
+						return values.reduce((acc, data) => {
+							if (data)
+								acc.push(data)
 							return acc
-						}, { status: 200, data:[], errors:[] })
+						}, [])
 					})
 				}), 
 			Promise.resolve(null))
@@ -187,21 +188,25 @@ const createClient = ({ name, method, pathname, headers={}, jsonKeyFile, mockFn,
 			const p = pathNameIsOptions ? pathname : (pathName || pathname)
 			const filter = pathName ? (({ pathname }) => pathname == `/${pathName.replace(/(^\/*|\/*$)/g, '')}`) : null
 
-			const find = (fn) => getTheToken(auth)
+			const find = (fn, options={}) => getTheToken(auth)
 				.then(token => {
 					if (!fn)
 						throw new Error('Missing required \'fn\' argument.')
 					if (typeof(fn) != 'function')
 						throw new Error(`Invalid argument exception. 'fn' must be a function (current: ${typeof(fn)}).`)
 
-					return findTask({ projectId: project_id, locationId: location_id, queueName: queue, token, find: fn }, { filter })
+					return _retryFn(
+						() => findTask({ projectId: project_id, locationId: location_id, queueName: queue, token, find: fn }, { filter }),
+						options)
 				})
 
 			return {
-				list: () => getTheToken(auth)
-					.then(token => listTasks({ projectId: project_id, locationId: location_id, queueName: queue, token }, { filter })),
+				list: (options={}) => getTheToken(auth)
+					.then(token => _retryFn(
+						() => listTasks({ projectId: project_id, locationId: location_id, queueName: queue, token }, { filter }), 
+						options)),
 				find,
-				some: (fn) => find(fn).then(result => result ? true : false),
+				some: (fn, options={}) => find(fn, options).then(result => result ? true : false),
 				send: (task, options={}) => Promise.resolve(null).then(() => {
 					const optionsType = typeof(options)
 					const optionsIsFn = optionsType == 'function'
@@ -215,8 +220,11 @@ const createClient = ({ name, method, pathname, headers={}, jsonKeyFile, mockFn,
 						return { id, schedule, headers: h }
 					}
 					
-					if (Array.isArray(task))
-						return service.batch(task.map(t => {
+					if (Array.isArray(task)) {
+						let firstOptions = null
+						const batchTasks = task.map(t => {
+							if (!firstOptions)
+								firstOptions = optionsFn(t)
 							const { id, schedule, headers } = getParams(t)
 							return {
 								id, 
@@ -226,8 +234,10 @@ const createClient = ({ name, method, pathname, headers={}, jsonKeyFile, mockFn,
 								headers, 
 								body: t
 							}
-						}), options)
-					else {
+						})
+						return service.batch(batchTasks, firstOptions)
+					} else {
+						const firstOptions = optionsFn(task)
 						const { id, schedule, headers } = getParams(task)
 						return service.push({
 							id, 
@@ -236,7 +246,7 @@ const createClient = ({ name, method, pathname, headers={}, jsonKeyFile, mockFn,
 							pathname: p, 
 							headers, 
 							body: task
-						}, options)
+						}, firstOptions)
 					}
 				})
 			}

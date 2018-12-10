@@ -44,7 +44,7 @@ describe('client', () => {
 				} 
 			}
 
-			return queue.push(task_01).then(({ data }) => {
+			return queue.push(task_01).then(data => {
 				assert.isNotOk(data.id, '01')
 				assert.isNotOk(data.schedule, '02')
 				assert.equal(data.projectId, projectId, '03')
@@ -76,7 +76,7 @@ describe('client', () => {
 				} 
 			}
 
-			return queue.push(task_01).then(({ data }) => {
+			return queue.push(task_01).then(data => {
 				assert.isNotOk(data.id, '01')
 				assert.isNotOk(data.schedule, '02')
 				assert.equal(data.projectId, projectId, '03')
@@ -112,7 +112,7 @@ describe('client', () => {
 				} 
 			}
 
-			return queue.push(task_01).then(({ data }) => {
+			return queue.push(task_01).then(data => {
 				assert.isNotOk(data.id, '01')
 				assert.isNotOk(data.schedule, '02')
 				assert.equal(data.projectId, projectId, '03')
@@ -158,7 +158,7 @@ describe('client', () => {
 				} 
 			}
 
-			return queue.push(task_01).then(({ data }) => {
+			return queue.push(task_01).then(data => {
 				assert.equal(data.id, 1,'01')
 				assert.equal(data.schedule, '2100-01-31T13:00:00.000Z','02')
 				assert.equal(data.projectId, projectId, '03')
@@ -243,7 +243,7 @@ describe('client', () => {
 				} 
 			}
 
-			return queue.batch([task_01, task_02]).then(({ data }) => {
+			return queue.batch([task_01, task_02]).then(data => {
 				assert.isNotOk(data[0].id, '01')
 				assert.isNotOk(data[0].schedule, '02')
 				assert.equal(data[0].projectId, projectId, '03')
@@ -298,7 +298,7 @@ describe('client', () => {
 				} 
 			}
 
-			return queue.batch([task_01,task_02]).then(({ data }) => {
+			return queue.batch([task_01,task_02]).then(data => {
 				assert.isNotOk(data[0].id, '01')
 				assert.isNotOk(data[0].schedule, '02')
 				assert.equal(data[0].projectId, projectId, '03')
@@ -357,7 +357,7 @@ describe('client', () => {
 				} 
 			}
 
-			return queue.batch([task_01, task_02]).then(({ data }) => {
+			return queue.batch([task_01, task_02]).then(data => {
 				assert.isNotOk(data[0].id, '01')
 				assert.isNotOk(data[0].schedule, '02')
 				assert.equal(data[0].projectId, projectId, '03')
@@ -434,7 +434,7 @@ describe('client', () => {
 				} 
 			}
 
-			return queue.batch([task_01,task_02]).then(({ data }) => {
+			return queue.batch([task_01,task_02]).then(data => {
 				assert.equal(data[0].id, 1,'01')
 				assert.equal(data[0].schedule, '2100-01-31T13:00:00.000Z','02')
 				assert.equal(data[0].projectId, projectId, '03')
@@ -514,35 +514,10 @@ describe('client', () => {
 			}
 
 			return queue.batch([task_01,task_02])
-				.then(({ errors, data }) => {
-
-					assert.equal(errors.length, 1, '01')
-					assert.equal(errors[0].task.id, 1,'02')
-					assert.equal(errors[0].task.method, 'POST','03')
-					assert.equal(errors[0].task.schedule, 'dewde','04')
-					assert.equal(errors[0].task.pathname, '/another-path','05')
-					assert.equal(errors[0].task.headers.someMore, 'headers','08')
-					assert.equal(errors[0].task.body.name, 'task #1','09')
-					assert.equal(errors[0].task.body.otherData.age, 23,'10')
-					assert.equal(errors[0].message, 'Invalid argument exception. \'schedule\' dewde is an invalid date', '11')
-					
-					assert.equal(data.length, 1, '00_B')
-					assert.equal(data[0].id, 2,'01_B')
-					assert.equal(data[0].schedule, '2200-01-31T13:00:00.000Z','02_B')
-					assert.equal(data[0].projectId, projectId, '03_B')
-					assert.equal(data[0].locationId, locationId, '04_B')
-					assert.equal(data[0].locationId, locationId, '05_B')
-					assert.equal(data[0].queueName, queueName, '06_B')
-					assert.equal(data[0].token, token, '07_B')
-					assert.equal(data[0].method, 'PUT', '08_B')
-					assert.equal(data[0].pathname, '/another-path', '09_B')
-					assert.isOk(data[0].headers, '10_B')
-					assert.equal(Object.keys(data[0].headers).length, 3, '11_B')
-					assert.equal(data[0].body.name, 'task #2', '12_B')
-					assert.equal(data[0].body.otherData.age, 233, '13_B')
-					assert.equal(data[0].headers.Accept, 'application/json', '14_B')
-					assert.equal(data[0].headers.Authorization, 'bearer: 12344', '15_B')
-					assert.equal(data[0].headers.someMore2, 'headers2', '16_B')
+				.then(data => ({ data, error:null }))
+				.catch(err => ({ error: err.message }))
+				.then(({ error }) => {
+					assert.equal(error, 'Invalid argument exception. \'schedule\' dewde is an invalid date')
 				})
 		})
 	})
@@ -562,7 +537,7 @@ describe('client', () => {
 				} 
 			}
 
-			return queue.task('service-01').send(task_01).then(({ data }) => {
+			return queue.task('service-01').send(task_01).then(data => {
 				assert.isNotOk(data.id, '01')
 				assert.isNotOk(data.schedule, '02')
 				assert.equal(data.projectId, projectId, '03')
@@ -592,7 +567,7 @@ describe('client', () => {
 				} 
 			}
 
-			return queue.task().send(task_01).then(({ data }) => {
+			return queue.task().send(task_01).then(data => {
 				assert.isNotOk(data.id, '01')
 				assert.isNotOk(data.schedule, '02')
 				assert.equal(data.projectId, projectId, '03')
@@ -632,7 +607,7 @@ describe('client', () => {
 			queue
 				.task({ headers: { Authorization: 'bearer: 12334' } })
 				.send(task_01, { headers: { someOther: 'header' }, schedule: new Date(4105083600000) })])
-				.then(([{ data:data_01 }, { data:data_02 }]) => {
+				.then(([data_01, data_02]) => {
 					
 					assert.isNotOk(data_01.id, '01')
 					assert.equal(data_01.schedule, '2100-01-31T13:00:00.000Z', '02')
@@ -718,7 +693,7 @@ describe('client', () => {
 			return queue
 				.task('service-01', { headers: { Authorization: 'bearer: 12334' } })
 				.send(task_01, t => ({ id: t.name, headers: { someOther: 'header' } }))
-				.then(({ data }) => {
+				.then(data => {
 					assert.equal(data.id, 'task #1', '01')
 					assert.isNotOk(data.schedule, '02')
 					assert.equal(data.projectId, projectId, '03')
@@ -765,7 +740,7 @@ describe('client', () => {
 			return queue
 				.task('service-01', { headers: { Authorization: 'bearer: 12334' } })
 				.send([task_01,task_02], t => ({ id: t.name, headers: { someOther: 'header' } }))
-				.then(({ data }) => {
+				.then(data => {
 					assert.equal(data[0].id, 'task #1', '01')
 					assert.isNotOk(data[0].schedule, '02')
 					assert.equal(data[0].projectId, projectId, '03')
