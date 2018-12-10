@@ -27,10 +27,17 @@ Before using this package, you must first:
 1. Have a Google Cloud Account.
 
 2. Have a Project in that Google Account (the next step are specific to that Project). __WARNING__: As of today (Oct 2018), Google Cloud Tasks API is in beta. That means that not all locations are available. Make sure that your App Engine is running in one of the following location:
+	- asia-northeast1 (Tokyo)
+	- asia-south1 (Mumbai)
+	- australia-southeast1 (Sydney)
+	- europe-west1 (Belgium)
+	- europe-west2 (London)
+	- europe-west3 (Frankfurt)
 	- us-central1 (Iowa)
 	- us-east1 (South Carolina)
-	- europe-west1 (Belgium)
-	- asia-northeast1 (Tokyo)
+	- us-east4 (Northern Virginia)
+
+> Google keeps adding more location until this service moves from beta to GA. You can double the latest list at [https://cloud.google.com/tasks/docs/dual-overview](https://cloud.google.com/tasks/docs/dual-overview). 
 
 3. Have an App Engine service running.
 
