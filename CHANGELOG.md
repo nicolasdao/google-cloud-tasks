@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+<a name="0.5.1"></a>
+## [0.5.1](https://github.com/nicolasdao/google-cloud-tasks/compare/v0.5.0...v0.5.1) (2018-12-12)
+
+
+### Features
+
+* Add support for scheduling task in dev mode ([aeb026f](https://github.com/nicolasdao/google-cloud-tasks/commit/aeb026f))
+
+
+
 <a name="0.5.0"></a>
 # [0.5.0](https://github.com/nicolasdao/google-cloud-tasks/compare/v0.4.1...v0.5.0) (2018-12-10)
 
