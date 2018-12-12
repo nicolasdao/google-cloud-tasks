@@ -128,15 +128,18 @@ const pushTask = ({ projectId, locationId, queueName, token, method, pathname, h
 	if (schedule)
 		payload.task.scheduleTime = schedule
 
-	if (service) 
-		return delay([100, 1000]).then(() => (m == 'GET' ? fetch.get : fetch.post)(service, {
+	if (service) {
+		const devSchedule = schedule 
+			? new Date(schedule).getTime() - Date.now()
+			: -10
+		return delay(devSchedule > 0 ? devSchedule : [100, 1000]).then(() => (m == 'GET' ? fetch.get : fetch.post)(service, {
 			Accept: 'application/json',
 			Authorization: `Bearer ${token}`
 		}, JSON.stringify(body||{})).then(res => {
 			res.request = { method: m, uri: service }
 			return res
 		}))
-	else {
+	} else {
 		const taskUri = APP_ENG_PUSH_TASK_URL(projectId, locationId, queueName)
 		return fetch.post(taskUri, {
 			Accept: 'application/json',
