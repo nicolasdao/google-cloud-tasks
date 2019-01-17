@@ -148,10 +148,27 @@ const retry = arities(
 				}))
 	})
 
+/**
+ * Makes a promise throw an error if it times our
+ * @param  {Promise} p       	Original promise
+ * @param  {Number} timeOut 	Optional. Default is 30,000 milliseconds
+ * @return {Promise}         	[description]
+ */
+const addTimeout = (p, timeOut=30000) => {
+	const timeoutMsg = `timout_${identity.new()}`
+	const timeoutTask = new Promise(onSuccess => setTimeout(() => onSuccess(timeoutMsg), timeOut))
+	return Promise.race([timeoutTask, p])
+		.then(res => {
+			if (res == timeoutMsg)
+				throw new Error('timeout')
+			return res
+		})
+}
 
 module.exports = {
 	delay,
 	wait,
 	check,
-	retry
+	retry,
+	addTimeout
 }

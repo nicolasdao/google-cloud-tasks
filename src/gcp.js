@@ -1,4 +1,4 @@
-const { fetch, promise: { delay } } = require('../utils')
+const { fetch, promise: { delay, addTimeout } } = require('../utils')
 
 // doc: https://cloud.google.com/tasks/docs/reference/rest/
 const APP_ENG_PUSH_TASK_URL = (projectId, locationId, queueName) => `https://cloudtasks.googleapis.com/v2beta3/projects/${projectId}/locations/${locationId}/queues/${queueName}/tasks`
@@ -132,13 +132,27 @@ const pushTask = ({ projectId, locationId, queueName, token, method, pathname, h
 		const devSchedule = schedule 
 			? new Date(schedule).getTime() - Date.now()
 			: -10
-		return delay(devSchedule > 0 ? devSchedule : [100, 1000]).then(() => (m == 'GET' ? fetch.get : fetch.post)(service, {
-			Accept: 'application/json',
-			Authorization: `Bearer ${token}`
-		}, JSON.stringify(body||{})).then(res => {
-			res.request = { method: m, uri: service }
-			return res
-		}))
+
+		const _pushTask = () => (m == 'GET' ? fetch.get : fetch.post)(
+			service,
+			{
+				Accept: 'application/json',
+				Authorization: `Bearer ${token}`
+			},
+			JSON.stringify(body||{}))
+
+		return delay(devSchedule > 0 ? devSchedule : [100, 1000])	
+			.then(() => addTimeout(_pushTask(), 4000)
+				.catch(err => {
+					if (err && (err.message || '').indexOf('timeout') >= 0)
+						return { status: 200, data: null }
+					else
+						throw err
+				}))
+			.then(res => {
+				res.request = { method: m, uri: service }
+				return res
+			})
 	} else {
 		const taskUri = APP_ENG_PUSH_TASK_URL(projectId, locationId, queueName)
 		return fetch.post(taskUri, {
