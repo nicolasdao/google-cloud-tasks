@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+<a name="0.5.3"></a>
+## [0.5.3](https://github.com/nicolasdao/google-cloud-tasks/compare/v0.5.2...v0.5.3) (2019-01-18)
+
+
+### Bug Fixes
+
+* Undefined indentity ref in the utils lib ([957bfb8](https://github.com/nicolasdao/google-cloud-tasks/commit/957bfb8))
+
+
+
 <a name="0.5.2"></a>
 ## [0.5.2](https://github.com/nicolasdao/google-cloud-tasks/compare/v0.5.1...v0.5.2) (2019-01-17)
 
