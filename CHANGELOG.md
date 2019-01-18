@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+<a name="0.5.4"></a>
+## [0.5.4](https://github.com/nicolasdao/google-cloud-tasks/compare/v0.5.3...v0.5.4) (2019-01-18)
+
+
+### Bug Fixes
+
+* options should never be null ([1f2a65c](https://github.com/nicolasdao/google-cloud-tasks/commit/1f2a65c))
+
+
+
 <a name="0.5.3"></a>
 ## [0.5.3](https://github.com/nicolasdao/google-cloud-tasks/compare/v0.5.2...v0.5.3) (2019-01-18)
 
