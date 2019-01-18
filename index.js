@@ -154,6 +154,7 @@ const createClient = ({ name, method, pathname, headers={}, jsonKeyFile, mockFn,
 		 * @return {[type]} 							[description]
 		 */
 		batch: (batchData, options={}) => Promise.resolve(null).then(() => {
+			options = options || {}
 			if (!batchData)
 				return { status: 200, data: {} }
 			if (!Array.isArray(batchData))
