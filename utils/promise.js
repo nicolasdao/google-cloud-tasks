@@ -6,7 +6,7 @@
  * LICENSE file in the root directory of this source tree.
 */
 
-const { obj: { merge }, math } = require('./core')
+const { obj: { merge }, math, identity } = require('./core')
 const { arities } = require('./functional')
 
 /**
@@ -18,7 +18,7 @@ const delay = timeout => Promise.resolve(null).then(() => {
 	let t = timeout || 100
 	if (Array.isArray(timeout)) {
 		if (timeout.length != 2)
-			throw new Error(`Wrong argument exception. When 'timeout' is an array, it must contain exactly 2 number items.`)
+			throw new Error('Wrong argument exception. When \'timeout\' is an array, it must contain exactly 2 number items.')
 
 		const start = timeout[0] * 1
 		const end = timeout[1] * 1
