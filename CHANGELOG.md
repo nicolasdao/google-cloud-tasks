@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+<a name="0.5.5"></a>
+## [0.5.5](https://github.com/nicolasdao/google-cloud-tasks/compare/v0.5.4...v0.5.5) (2019-01-23)
+
+
+### Bug Fixes
+
+* The Dev mode does not emit request with the 'x-appengine-queuename' and 'x-appengine-taskname' headers, preventing to properly identify those requests as coming from the Task Queue ([48e1daa](https://github.com/nicolasdao/google-cloud-tasks/commit/48e1daa))
+
+
+
 <a name="0.5.4"></a>
 ## [0.5.4](https://github.com/nicolasdao/google-cloud-tasks/compare/v0.5.3...v0.5.4) (2019-01-18)
 
