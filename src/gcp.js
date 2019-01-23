@@ -137,7 +137,9 @@ const pushTask = ({ projectId, locationId, queueName, token, method, pathname, h
 			service,
 			{
 				Accept: 'application/json',
-				Authorization: `Bearer ${token}`
+				Authorization: `Bearer ${token}`,
+				'x-appengine-queuename': queueName || '__dev',
+				'x-appengine-taskname': '__dev',
 			},
 			JSON.stringify(body||{}))
 
