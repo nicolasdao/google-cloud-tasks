@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+<a name="0.5.6"></a>
+## [0.5.6](https://github.com/nicolasdao/google-cloud-tasks/compare/v0.5.5...v0.5.6) (2019-01-25)
+
+
+### Bug Fixes
+
+* A single failing task prevent all the subsequent others to not be pushed. Dev mode does not support failing is the same task id is pushed more than once ([256d2d0](https://github.com/nicolasdao/google-cloud-tasks/commit/256d2d0))
+
+
+
 <a name="0.5.5"></a>
 ## [0.5.5](https://github.com/nicolasdao/google-cloud-tasks/compare/v0.5.4...v0.5.5) (2019-01-23)
 
