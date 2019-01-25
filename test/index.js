@@ -515,9 +515,14 @@ describe('client', () => {
 
 			return queue.batch([task_01,task_02])
 				.then(data => ({ data, error:null }))
-				.catch(err => ({ error: err.message }))
-				.then(({ error }) => {
-					assert.equal(error, 'Invalid argument exception. \'schedule\' dewde is an invalid date')
+				.catch(err => ({ error: err.message, data: err.data }))
+				.then(({ error, data }) => {
+					assert.equal(error, '1 task failed and 1 succeeded (out of 2 pushed tasks)', '01')
+					assert.isOk(data, '02')
+					assert.equal(data.length, 1, '03')
+					assert.equal(data[0].id, 1, '04')
+					assert.isOk(data[0].error, '05')
+					assert.equal(data[0].error.message, 'Invalid argument exception. \'schedule\' dewde is an invalid date', '06')
 				})
 		})
 	})

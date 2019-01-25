@@ -117,7 +117,7 @@ const createClient = ({ name, method, pathname, headers={}, jsonKeyFile, mockFn,
 				throw e
 		})
 		.then(({ status, data, request }) => {
-			if (status >= 200 && status < 400)
+			if (status >= 200 && status < 300)
 				return data
 			else {
 				let message = request && request.method && request.uri 
@@ -129,6 +129,7 @@ const createClient = ({ name, method, pathname, headers={}, jsonKeyFile, mockFn,
 			
 				let e = new Error(message)
 				e.data = data || {}
+				e.status = status // 409 means that a task with the ID already exists
 				throw e
 			}
 		})
@@ -162,19 +163,30 @@ const createClient = ({ name, method, pathname, headers={}, jsonKeyFile, mockFn,
 
 			const batchSize = options.batchSize && options.batchSize > 0 ? options.batchSize : 200
 			return collection.batch(batchData, batchSize).reduce((runJob, taskDataBatch) => 
-				runJob.then(() => {
+				runJob.then(taskResponses => {
 					const start = Date.now()
-					return Promise.all(taskDataBatch.map(t => push(t, options))).then(values => {
-						if (options.debug)
-							console.log(`Batch with ${taskDataBatch.length} tasks has been enqueued in ${((Date.now() - start)/1000).toFixed(2)} seconds`)
-						return values.reduce((acc, data) => {
-							if (data)
-								acc.push(data)
-							return acc
-						}, [])
-					})
-				}), 
-			Promise.resolve(null))
+					return Promise.all(taskDataBatch.map(t => push(t, options).catch(err => ({ id: t.id, error: { status: err.status, message: err.message } }))))
+						.then(values => {
+							if (options.debug)
+								console.log(`Batch with ${taskDataBatch.length} tasks has been enqueued in ${((Date.now() - start)/1000).toFixed(2)} seconds`)
+							return values.reduce((acc, data) => {
+								if (data)
+									acc.push(data)
+								return acc
+							}, taskResponses)
+						})
+				}), Promise.resolve([]))
+				.then(responses => {
+					responses = responses || []
+					const failedTasks = responses.filter(x => x.error)
+					const failedCount = failedTasks.length
+					if (failedCount > 0) {
+						let e = new Error(`${failedCount} task${failedCount > 1 ? 's' : ''} failed and ${batchData.length - failedCount} succeeded (out of ${batchData.length} pushed tasks)`)
+						e.data = failedTasks
+						throw e
+					} else
+						return responses
+				})
 		})
 	}
 

@@ -103,6 +103,10 @@ const findTask = ({ projectId, locationId, queueName, token, find }, options={})
 	}) 
 })
 
+const _createTaskId = ({ projectId, locationId, queueName, id }) => `projects/${projectId}/locations/${locationId}/queues/${queueName}/tasks/${id}`
+
+let _devModeTaskIdTracking = { lastUpdated: 0 }
+const DEV_TASK_TRACKING_TIMEOUT = 10 * 60 * 1000 // 10 minutes
 const pushTask = ({ projectId, locationId, queueName, token, method, pathname, headers, body, id, schedule, serviceUrl }) => Promise.resolve(null).then(() => {
 	_validateRequiredParams({ projectId, locationId, queueName, token, method })
 	const m = method.toUpperCase()
@@ -124,11 +128,24 @@ const pushTask = ({ projectId, locationId, queueName, token, method, pathname, h
 	}
 
 	if (id)
-		payload.task.name = `projects/${projectId}/locations/${locationId}/queues/${queueName}/tasks/${id}`
+		payload.task.name = _createTaskId({ projectId, locationId, queueName, id })
 	if (schedule)
 		payload.task.scheduleTime = schedule
 
 	if (service) {
+		// THE IS THE DEV MODE
+		if (id) {
+			const taskId = _createTaskId({ projectId, locationId, queueName, id })
+			const devTaskTrackingExpired = (Date.now() - _devModeTaskIdTracking.lastUpdated) > DEV_TASK_TRACKING_TIMEOUT
+			if (devTaskTrackingExpired) {
+				_devModeTaskIdTracking = null // force memory flushing
+				_devModeTaskIdTracking = { lastUpdated: Date.now() } // reset the cache
+				_devModeTaskIdTracking[taskId] = true
+			} else if (!_devModeTaskIdTracking[taskId])
+				_devModeTaskIdTracking[taskId] = true
+			else
+				return { status: 409, data: { error: { message: 'Requested entity already exists' } }, request: { method: m, uri: service } }
+		}
 		const devSchedule = schedule 
 			? new Date(schedule).getTime() - Date.now()
 			: -10
@@ -156,6 +173,7 @@ const pushTask = ({ projectId, locationId, queueName, token, method, pathname, h
 				return res
 			})
 	} else {
+		// THE IS THE PROD MODE
 		const taskUri = APP_ENG_PUSH_TASK_URL(projectId, locationId, queueName)
 		return fetch.post(taskUri, {
 			Accept: 'application/json',
