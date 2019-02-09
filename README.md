@@ -200,7 +200,7 @@ Does the same as above, but only for tasks with a pathname equal to 'service-01'
 queue.task('service-01').some(({ id }) => /^123/.test(id)).then(yes => console.log(yes))
 ```
 
-### Testind if an http request is from Cloud Task Or CRON
+### Testing if an http request is from Cloud Task Or CRON
 
 ```js
 const { utils: { isTaskRequest, isCronRequest } } = require('google-cloud-tasks')
@@ -216,6 +216,18 @@ app.get('/', (req,res) => {
 
 > Note: Both `isTaskRequest` and `isCronRequest` accept either a request (e.g., { headers: { ... } }) object or a headers object (e.g., { ... }).
 The way those 2 methods work is straighforward. They look for the existence of those 2 headers in the request: `'x-appengine-queuename'` and `'x-appengine-taskname'`. If those 2 headers are both present, the request is either a CRON or a Cloud Task request. A CRON request is one with a `'x-appengine-queuename'`	 equal to `'__cron'`.
+
+### Formatting a Task ID
+
+A Task ID is an optional argument that can be passed when pushing a task to the queue. It helps to make sure that the task is only pushed once. That task ID only accept the following characters: a-z, A-Z, 0-9, - and _ 
+
+To facilitate generating those IDs, we provide the following utility:
+
+```js
+const { utils: { formatTaskId } } = require('google-cloud-tasks')
+
+const taskId = formatTaskId(`You can type anything here %&532vj% @V~`)
+```
 
 ## Minimizing Network Errors
 

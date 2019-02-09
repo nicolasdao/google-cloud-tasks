@@ -289,13 +289,16 @@ const isRequestFromCron = req => {
 	return isHeadersFromCron(req.headers) || isHeadersFromCron(req)
 }
 
+const formatTaskId = id => encodeURIComponent(id || '').replace(/[^a-zA-Z0-9-_]/g, '')
+
 module.exports = {
 	client: {
 		new: createClient
 	},
 	utils: {
 		isTaskRequest: isRequestFromCloudTask,
-		isCronRequest: isRequestFromCron
+		isCronRequest: isRequestFromCron,
+		formatTaskId
 	}
 }
 
