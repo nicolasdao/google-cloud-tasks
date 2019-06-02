@@ -253,6 +253,7 @@ Our other open-sourced projects:
 ## Available Regions
 
 As of today (June 2019), Google Cloud Tasks API is in beta. That means that not all locations are available. Make sure that your App Engine is running in one of the following location:
+
 	- asia-south1 (Mumbai)
 	- asia-southeast1 (Singapore)
 	- asia-east2 (Hong Kong)
