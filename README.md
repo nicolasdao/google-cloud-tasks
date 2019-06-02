@@ -54,10 +54,12 @@ Before using this package, you must first:
 const { join } = require('path')
 const { client } = require('google-cloud-tasks')
 
+// There is only one queue per App Engine service. If you have multiple App Engine microservices,
+// you have to create a queue per service.
 const queue = client.new({
-	name: 'your-queue-name',								// Required
-	method: 'POST',             							// Optional. Default 'GET'
-	headers: {												// Optional. Default {}
+	name: 'your-queue-name', // Required. This is the Google Cloud Task that points to a specific App Engine Service.
+	method: 'POST',		 // Optional. Default 'GET'
+	headers: {		 // Optional. Default {}
 		Accept: 'application/json'
 	},
 	jsonKeyFile: join(__dirname, './service-account.json')	// Required
