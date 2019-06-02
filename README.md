@@ -6,7 +6,7 @@ __*Google Cloud Tasks*__ is node.js package to push tasks to Google Cloud Tasks 
 > * [Install](#install) 
 > * [How To Use It](#how-to-use-it) 
 >    * [Prerequisite](#prerequisite)
->    * [Show Me The Code](#show-me-the-code)
+>    * [Getting Started](#getting-started)
 >    * [How To Test Locally](#how-to-test-locally)
 >    * [Other Utilities](#other-utilities)
 >    * [Minimizing Network Errors](#minimizing-network-errors)
@@ -46,9 +46,9 @@ Before using this package, you must first:
 
 7. Save that JSON key into a `service-account.json` file. Make sure it is located under a path that is accessible to your app (the root folder usually).
 
-8. Add a `location_id` property into that `service-account.json` file. That property should contain the location of your App Engine. Because the Google Cloud Tasks API is currently in beta, only the regions described in regions described in the [Annexes](#annexes)/[Available Regions](#available-regions) are available.
+8. Add a `location_id` property into that `service-account.json` file. That property should contain the location of your App Engine. Because the Google Cloud Tasks API is currently in beta, only the regions described in the [Annexes](#annexes)/[Available Regions](#available-regions) are available.
 
-## Show Me The Code
+## Getting Started
 
 ```js
 const { join } = require('path')
