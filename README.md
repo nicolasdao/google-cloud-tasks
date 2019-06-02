@@ -11,6 +11,8 @@ __*Google Cloud Tasks*__ is node.js package to push tasks to Google Cloud Tasks 
 >    * [Other Utilities](#other-utilities)
 >    * [Minimizing Network Errors](#minimizing-network-errors)
 > * [About Neap](#this-is-what-we-re-up-to)
+> * [Annexes](#annexes)
+>    * [Available Regions](#available-regions)
 > * [License](#license)
 
 
@@ -27,16 +29,7 @@ Before using this package, you must first:
 
 1. Have a Google Cloud Account.
 
-2. Have a Project in that Google Account (the next step are specific to that Project). __WARNING__: As of today (Oct 2018), Google Cloud Tasks API is in beta. That means that not all locations are available. Make sure that your App Engine is running in one of the following location:
-	- asia-northeast1 (Tokyo)
-	- asia-south1 (Mumbai)
-	- australia-southeast1 (Sydney)
-	- europe-west1 (Belgium)
-	- europe-west2 (London)
-	- europe-west3 (Frankfurt)
-	- us-central1 (Iowa)
-	- us-east1 (South Carolina)
-	- us-east4 (Northern Virginia)
+2. Have a Project in that Google Account (the next step are specific to that Project). __WARNING__: As of today (June 2019), Google Cloud Tasks API is in beta. That means that not all locations are available. Make sure that your App Engine is running in one of the regions described in the [Annexes](#annexes)/[Available Regions](#available-regions).
 
 > Google keeps adding more location until this service moves from beta to GA. You can double the latest list at [https://cloud.google.com/tasks/docs/dual-overview](https://cloud.google.com/tasks/docs/dual-overview). 
 
@@ -53,11 +46,7 @@ Before using this package, you must first:
 
 7. Save that JSON key into a `service-account.json` file. Make sure it is located under a path that is accessible to your app (the root folder usually).
 
-8. Add a `location_id` property into that `service-account.json` file. That property should contain the location of your App Engine. Because the Google Cloud Tasks API is currently in beta, only the following locations are available (as of Oct 2018):
-	- `us-central1`
-	- `us-east1`
-	- `europe-west1`
-	- `asia-northeast1`
+8. Add a `location_id` property into that `service-account.json` file. That property should contain the location of your App Engine. Because the Google Cloud Tasks API is currently in beta, only the regions described in regions described in the [Annexes](#annexes)/[Available Regions](#available-regions) are available.
 
 ## Show Me The Code
 
@@ -259,6 +248,27 @@ Our other open-sourced projects:
 
 #### Tools
 * [__*aws-cloudwatch-logger*__](https://github.com/nicolasdao/aws-cloudwatch-logger): Promise based logger for AWS CloudWatch LogStream.
+
+# Annexes
+## Available Regions
+
+As of today (June 2019), Google Cloud Tasks API is in beta. That means that not all locations are available. Make sure that your App Engine is running in one of the following location:
+	- asia-south1 (Mumbai)
+	- asia-southeast1 (Singapore)
+	- asia-east2 (Hong Kong)
+	- asia-northeast1 (Tokyo)
+	- asia-northeast2 (Osaka)
+	- australia-southeast1 (Australia - Sydney)
+	- europe-west1 (Belgium)
+	- europe-west2 (London)
+	- europe-west3 (Frankfurt)
+	- europe-west6 (Zurich)
+	- us-west2 (Los Angeles)
+	- us-central1 (Iowa)
+	- us-east1 (South Carolina)
+	- us-east4 (Northern Virginia)
+	- northamerica-northeast1 (Montreal)
+	- southamerica-east1 (Sao Paulo)
 
 # License
 Copyright (c) 2018, Neap Pty Ltd.
