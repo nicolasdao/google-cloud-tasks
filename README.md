@@ -88,14 +88,14 @@ const task_02 = {
 	} 
 }
 
-// Sending a single task to queue 'your-queue-name' using a 'POST' at the pathname 'service-01'
+// Sending a single task to queue 'your-queue-name' using a 'POST' at the pathname 'pathname-01'
 // with headers 'Accept: application/json'
-queue.task('service-01').send(task_01)
+queue.task('pathname-01').send(task_01)
 	.then(({ status, data }) => console.log({ status, data }))
 
-// Sending multiple tasks to queue 'your-queue-name' using a 'POST' at the pathname 'service-01'
+// Sending multiple tasks to queue 'your-queue-name' using a 'POST' at the pathname 'pathname-01'
 // with headers 'Accept: application/json'
-queue.task('service-01').send([task_01, task_02])
+queue.task('pathname-01').send([task_01, task_02])
 	.then(({ status, data, errors }) => console.log({ status, data, errors })) 	// data is an response array for each successfull task sent
 																				// errors is an response array for each failed task
 
@@ -104,34 +104,34 @@ queue.task('service-01').send([task_01, task_02])
 queue.task().send(task_01)
 	.then(({ status, data }) => console.log({ status, data }))
 
-// Sending a single task to queue 'your-queue-name' using a 'POST' at the pathname 'service-01'
+// Sending a single task to queue 'your-queue-name' using a 'POST' at the pathname 'pathname-01'
 // with headers 'Accept: application/json' and 'Authorization: 123'
-queue.task('service-01', { headers: { Authorization: '123' } }).send(task_01)
+queue.task('pathname-01', { headers: { Authorization: '123' } }).send(task_01)
 	.then(({ status, data }) => console.log({ status, data }))
 
-// Sending a single task to queue 'your-queue-name' using a 'POST' at the pathname 'service-01'
+// Sending a single task to queue 'your-queue-name' using a 'POST' at the pathname 'pathname-01'
 // with headers 'Accept: application/json', 'Authorization: 123' and 'Custom: some other data'
-queue.task('service-01', { headers: { Authorization: '123' } }).send(task_01, { headers: { Custom: 'some other data' } })
+queue.task('pathname-01', { headers: { Authorization: '123' } }).send(task_01, { headers: { Custom: 'some other data' } })
 	.then(({ status, data }) => console.log({ status, data }))
 
-// Delaying to send a single task to queue 'your-queue-name' using a 'POST' at the pathname 'service-01'
+// Delaying to send a single task to queue 'your-queue-name' using a 'POST' at the pathname 'pathname-01'
 // with headers 'Accept: application/json' and 'Custom: some other data' to the 1st of Feb 2020
-queue.task('service-01').send(task_01, { schedule: new Date(2020,1,1), headers: { Custom: 'some other data' }})
+queue.task('pathname-01').send(task_01, { schedule: new Date(2020,1,1), headers: { Custom: 'some other data' }})
 	.then(({ status, data }) => console.log({ status, data }))
 
-// Preventing to send the same task more than once to queue 'your-queue-name' using a 'POST' at the pathname 'service-01'
+// Preventing to send the same task more than once to queue 'your-queue-name' using a 'POST' at the pathname 'pathname-01'
 // with headers 'Accept: application/json' and 'Custom: some other data'. This is done by explicitely settin the task id. 
 // That id must be unique. The second task will fail because the task with id 1 will already been added.
-queue.task('service-01').send(task_01, { id:1, headers: { Custom: 'some other data' }})
+queue.task('pathname-01').send(task_01, { id:1, headers: { Custom: 'some other data' }})
 	.then(({ status, data }) => console.log({ status, data }))
-queue.task('service-01').send(task_01, { id:1, headers: { Custom: 'some other data' }})
+queue.task('pathname-01').send(task_01, { id:1, headers: { Custom: 'some other data' }})
 	.then(({ status, data }) => console.log({ status, data }))
 
-// Sending a single task to queue 'your-queue-name' using a 'POST' at the pathname 'service-01'
+// Sending a single task to queue 'your-queue-name' using a 'POST' at the pathname 'pathname-01'
 // with headers 'Accept: application/json' and 'Custom: some other data'. Explicitely setting the task id based on the task payload.
 // NOTICE: 	In the example, the second argument of the 'send' method is not an object anymore, but a function. This function 
 // 			is supposed to return an object.
-queue.task('service-01').send(task_01, t => ({ id: t.otherData.age, headers: { Custom: 'some other data' } }))
+queue.task('pathname-01').send(task_01, t => ({ id: t.otherData.age, headers: { Custom: 'some other data' } }))
 	.then(({ status, data }) => console.log({ status, data }))
 ```
 
@@ -155,8 +155,8 @@ const task_01 = {
 	} 
 }
 
-// Sending a single task using a 'POST' to 'http://localhost:4000/service-01' bypassing the queue 'your-queue-name'.
-queue.task('service-01').send(task_01)
+// Sending a single task using a 'POST' to 'http://localhost:4000/pathname-01' bypassing the queue 'your-queue-name'.
+queue.task('pathname-01').send(task_01)
 	.then(({ status, data }) => console.log({ status, data }))
 ```
 
@@ -169,9 +169,9 @@ List all tasks for that queue
 queue.task().list().then(tasks => console.log(tasks))
 ```
 
-Only list the tasks for the specific pathname 'service-01' in that queue
+Only list the tasks for the specific pathname 'pathname-01' in that queue
 ```js
-queue.task('service-01').list().then(tasks => console.log(tasks))
+queue.task('pathname-01').list().then(tasks => console.log(tasks))
 ```
 
 ### Finding a specific task
@@ -182,9 +182,9 @@ Return the first task that matches the task predicate (a task contains the follo
 queue.task().find(({ id }) => /^123/.test(id)).then(task => console.log(task))
 ```
 
-Does the same as above, but only for tasks with a pathname equal to 'service-01'
+Does the same as above, but only for tasks with a pathname equal to 'pathname-01'
 ```js
-queue.task('service-01').find(({ id }) => /^123/.test(id)).then(task => console.log(task))
+queue.task('pathname-01').find(({ id }) => /^123/.test(id)).then(task => console.log(task))
 ```
 
 ### Testing if a task exists
@@ -195,9 +195,9 @@ Return the first task that matches the task predicate (a task contains the follo
 queue.task().some(({ id }) => /^123/.test(id)).then(yes => console.log(yes))
 ```
 
-Does the same as above, but only for tasks with a pathname equal to 'service-01'
+Does the same as above, but only for tasks with a pathname equal to 'pathname-01'
 ```js
-queue.task('service-01').some(({ id }) => /^123/.test(id)).then(yes => console.log(yes))
+queue.task('pathname-01').some(({ id }) => /^123/.test(id)).then(yes => console.log(yes))
 ```
 
 ### Testing if an http request is from Cloud Task Or CRON
@@ -234,13 +234,13 @@ const taskId = formatTaskId(`You can type anything here %&532vj% @V~`)
 Networks errors (e.g. socket hang up, connect ECONNREFUSED) are a fact of life. To deal with those undeterministic errors, this library uses a simple exponential back off retry strategy, which will reprocess your read or write request for 10 seconds by default. You can increase that retry period as follow:
 
 ```js
-queue.task('service-01').send(task_01, { timeout: 30000 })
+queue.task('pathname-01').send(task_01, { timeout: 30000 })
 
 queue.task().list({ timeout: 30000 })
 
-queue.task('service-01').find(({ id }) => /^123/.test(id), { timeout: 30000 })
+queue.task('pathname-01').find(({ id }) => /^123/.test(id), { timeout: 30000 })
 
-queue.task('service-01').some(({ id }) => /^123/.test(id), { timeout: 30000 })
+queue.task('pathname-01').some(({ id }) => /^123/.test(id), { timeout: 30000 })
 ```
 
 # This Is What We re Up To
