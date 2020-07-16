@@ -1,6 +1,13 @@
-# Change Log
+# Changelog
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
+
+### [0.6.1](https://github.com/nicolasdao/google-cloud-tasks/compare/v0.6.0...v0.6.1) (2020-07-16)
+
+
+### Bug Fixes
+
+* Vulnerability ([34f142a](https://github.com/nicolasdao/google-cloud-tasks/commit/34f142a5f2791a744fc2021dc932506cec5c67f2))
 
 <a name="0.6.0"></a>
 # [0.6.0](https://github.com/nicolasdao/google-cloud-tasks/compare/v0.5.6...v0.6.0) (2019-02-09)
