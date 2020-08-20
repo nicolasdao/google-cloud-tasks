@@ -6,18 +6,13 @@
  * LICENSE file in the root directory of this source tree.
 */
 
-const googleAuth = require('google-auto-auth')
+const { GoogleAuth } = require('google-auth-library')
 const { promise: { retry }, collection, obj: { merge }, validate } = require('./utils')
 const { pushTask, listTasks, findTask } = require('./src/gcp')
 
 const ERR_INVALID_SCHEDULE_CODE = 589195462987
 
-const getToken = auth => new Promise((onSuccess, onFailure) => auth.getToken((err, token) => err ? onFailure(err) : onSuccess(token)))
-
-const _validateRequiredParams = (params={}) => Object.keys(params).forEach(p => {
-	if (!params[p])
-		throw new Error(`Parameter '${p}' is required.`)
-})
+const getToken = auth => auth.getAccessToken()
 
 const _retryFn = (fn, options={}) => retry(
 	fn, 
@@ -32,36 +27,72 @@ const _retryFn = (fn, options={}) => retry(
 const _getJsonKey = jsonKeyFile => require(jsonKeyFile)
 
 const HTTP_METHODS = { 'GET': true, 'POST': true, 'PUT': true, 'DELETE': true, 'PATCH': true, 'OPTIONS': true, 'HEAD': true }
-const createClient = ({ name, method, pathname, headers={}, jsonKeyFile, mockFn, byPassConfig={} }) => {
+/**
+ * Creates a new Google Cloud Task client. 
+ *
+ * @param  {String} config.name 					
+ * @param  {String} config.method 					
+ * @param  {String} config.pathname 					
+ * @param  {String} config.headers 					
+ * @param  {String} config.jsonKeyFile 					Path to the service-account.json file. If specified, 'clientEmail', 'privateKey', 'projectId' are not required.
+ * @param  {String} config.credentials.project_id
+ * @param  {String} config.credentials.client_email
+ * @param  {String} config.credentials.private_key
+ * @param  {String} config.projectId
+ * @param  {String} config.locationId 					
+ * @return {Object}        				
+ */
+const createClient = config => {
+	let { name, method, pathname, headers={}, jsonKeyFile, credentials, mockFn, byPassConfig={}, projectId, locationId } = config || {}
+	const { getJsonKey: _mockGetJsonKey, pushTask: _mockPushTask, getToken: _mockGetToken } = mockFn || {}
+	let { project_id, location_id, client_email, private_key } = credentials ? credentials : jsonKeyFile ? (_mockGetJsonKey || _getJsonKey)(jsonKeyFile) : {}
+
+	projectId = projectId || project_id || process.env.GOOGLE_CLOUD_TASK_PROJECT_ID || process.env.GOOGLE_CLOUD_PROJECT_ID
+	locationId = locationId || location_id || process.env.GOOGLE_CLOUD_TASK_REGION || process.env.GOOGLE_CLOUD_REGION
+	client_email = client_email || process.env.GOOGLE_CLOUD_TASK_CLIENT_EMAIL || process.env.GOOGLE_CLOUD_CLIENT_EMAIL
+	private_key = private_key || process.env.GOOGLE_CLOUD_TASK_PRIVATE_KEY || process.env.GOOGLE_CLOUD_PRIVATE_KEY
+
 	const { service:serviceUrl } = byPassConfig
 	if (serviceUrl && !validate.url(serviceUrl))
 		throw new Error(`Invalid argument exception. 'byPassConfig.service' ${serviceUrl} is an invalid URL.`)
 
-	const { getJsonKey: _mockGetJsonKey, pushTask: _mockPushTask, getToken: _mockGetToken } = mockFn || {}
 	const getTheToken = serviceUrl ? (() => Promise.resolve('dev-token-1234')) : (_mockGetToken || getToken)
 	const pushTheTask = _mockPushTask || pushTask
 
 	const queue = name
-	_validateRequiredParams({ queue, jsonKeyFile })
+	if (!queue)
+		throw new Error('Missing required argument \'name\'')
+
 	method = (method || 'GET').trim().toUpperCase() 
 	pathname = pathname || '/'
 	
 	if (!HTTP_METHODS[method])
 		throw new Error(`Invalid argument exception. Method '${method}' is not a valid HTTP method.`)
-
-	const { location_id, project_id } = (_mockGetJsonKey || _getJsonKey)(jsonKeyFile)
 	
-	if (!project_id)
-		throw new Error(`Missing required 'project_id' property. This property should be present inside the service account json file ${jsonKeyFile}.`)
-	if (!location_id)
-		throw new Error(`Missing required 'location_id' property. This property should be present inside the service account json file ${jsonKeyFile}. It contains the location where the Google Cloud Task Queue is hosted.`)
+	if (!locationId)
+		throw new Error(`Missing required 'locationId' property. This property should be explicitly defined or should be present inside the service account json file ${jsonKeyFile}. It contains the location where the Google Cloud Task Queue is hosted.`)
 	
-	const auth = googleAuth({ 
-		keyFilename: jsonKeyFile,
+	const authConfig = {
 		scopes: ['https://www.googleapis.com/auth/cloud-platform']
-	})
+	}
 
-	const push = (taskData, options={}) => Promise.resolve(null).then(() => { 
+	if (client_email && private_key)
+		authConfig.credentials = { client_email, private_key }
+
+	const auth = new GoogleAuth(authConfig)
+
+	const getProjectId = () => Promise.resolve(null)
+		.then(() => projectId ? projectId : auth.getProjectId())
+		.then(id => {
+			if (!id)
+				throw new Error(`Missing required 'projectId' property. This property should be explicitly defined or should be present inside the service account json file ${jsonKeyFile}.`)
+			if (!projectId)
+				projectId = id 
+
+			return id
+		})
+
+	const push = (taskData, options={}) => getProjectId().then(_projectId => { 
 		const { id, method:_method, schedule, pathname:_pathname, headers:_header={}, body={} } = taskData
 		const h = merge(headers, _header)
 		let s
@@ -98,8 +129,8 @@ const createClient = ({ name, method, pathname, headers={}, jsonKeyFile, mockFn,
 				() => pushTheTask({
 					id,
 					schedule: s,
-					projectId: project_id, 
-					locationId: location_id, 
+					projectId: _projectId, 
+					locationId, 
 					queueName: queue, 
 					token, 
 					method: _method || method,
@@ -202,21 +233,23 @@ const createClient = ({ name, method, pathname, headers={}, jsonKeyFile, mockFn,
 			const filter = pathName ? (({ pathname }) => pathname == `/${pathName.replace(/(^\/*|\/*$)/g, '')}`) : null
 
 			const find = (fn, options={}) => getTheToken(auth)
-				.then(token => {
+				.then(token => getProjectId().then(id => ({ projectId:id, token })))
+				.then(({ token, projectId:_projectId }) => {
 					if (!fn)
 						throw new Error('Missing required \'fn\' argument.')
 					if (typeof(fn) != 'function')
 						throw new Error(`Invalid argument exception. 'fn' must be a function (current: ${typeof(fn)}).`)
 
 					return _retryFn(
-						() => findTask({ projectId: project_id, locationId: location_id, queueName: queue, token, find: fn }, { filter }),
+						() => findTask({ projectId: _projectId, locationId, queueName: queue, token, find: fn }, { filter }),
 						options)
 				})
 
 			return {
 				list: (options={}) => getTheToken(auth)
-					.then(token => _retryFn(
-						() => listTasks({ projectId: project_id, locationId: location_id, queueName: queue, token }, { filter }), 
+					.then(token => getProjectId().then(id => ({ projectId:id, token })))
+					.then(({ token, projectId:_projectId }) => _retryFn(
+						() => listTasks({ projectId: _projectId, locationId, queueName: queue, token }, { filter }), 
 						options)),
 				find,
 				some: (fn, options={}) => find(fn, options).then(result => result ? true : false),

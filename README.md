@@ -4,15 +4,20 @@ __*Google Cloud Tasks*__ is node.js package to push tasks to Google Cloud Tasks 
 # Table of Contents
 
 > * [Install](#install) 
-> * [How To Use It](#how-to-use-it) 
->    * [Prerequisite](#prerequisite)
->    * [Getting Started](#getting-started)
->    * [How To Test Locally](#how-to-test-locally)
->    * [Other Utilities](#other-utilities)
->    * [Minimizing Network Errors](#minimizing-network-errors)
+> * [Getting Started](#getting-started)
+>	- [Prerequisite](#prerequisite)
+>	- [Basics](#basics)
+>	- [Four ways to create a client](#four-ways-to-create-a-client)
+>		- [User the hosting identity](#user-the-hosting-identity)
+>		- [Using a `service-account.json`](#using-a-service-accountjson)
+>		- [Using explicit credentials](#using-explicit-credentials)
+>		- [Using environment variables](#using-environment-variables)
+>	- [How To Test Locally](#how-to-test-locally)
+>	- [Other Utilities](#other-utilities)
+>	- [Minimizing Network Errors](#minimizing-network-errors)
 > * [About Neap](#this-is-what-we-re-up-to)
 > * [Annexes](#annexes)
->    * [Available Regions](#available-regions)
+>	- [Available Regions](#available-regions)
 > * [License](#license)
 
 
@@ -21,34 +26,29 @@ __*Google Cloud Tasks*__ is node.js package to push tasks to Google Cloud Tasks 
 npm i google-cloud-tasks --save
 ```
 
-# How To Use It
+# Getting Started
 
 ## Prerequisite
 
 Before using this package, you must first:
 
 1. Have a Google Cloud Account.
-
 2. Have a Project in that Google Account (the next step are specific to that Project). __WARNING__: As of today (June 2019), Google Cloud Tasks API is in beta. That means that not all locations are available. Make sure that your App Engine is running in one of the regions described in the [Annexes](#annexes)/[Available Regions](#available-regions).
-
 > Google keeps adding more location until this service moves from beta to GA. You can double the latest list at [https://cloud.google.com/tasks/docs/dual-overview](https://cloud.google.com/tasks/docs/dual-overview). 
-
 3. Have an App Engine service running.
-
 4. Have a Task Queue configured to push tasks to the App Engine service above.
-
-5. Have a Service Account set up with the following 2 roles:
+5. Have a Service Account or a hosting service associated with a service account set up with the following 3 roles :
 	- `roles/appengine.appViewer`
 	- `roles/cloudtasks.enqueuer`
 	- `roles/cloudtasks.viewer`
 
-6. Get the JSON keys file for that Service Account above
+If hosting environment is Cloud Compute, App Engine, Cloud Function or Cloud Run, and if their associated service account has all the roles above, then that's it. If, on the other hand, you wish to use a service account to explicitly create a new client, then:
 
-7. Save that JSON key into a `service-account.json` file. Make sure it is located under a path that is accessible to your app (the root folder usually).
+1. Get the JSON keys file for that Service Account above
+2. Save that JSON key into a `service-account.json` file. Make sure it is located under a path that is accessible to your app (the root folder usually).
+3. Add a `location_id` property into that `service-account.json` file. That property should contain the location of your App Engine. Because the Google Cloud Tasks API is currently in beta, only the regions described in the [Annexes](#annexes)/[Available Regions](#available-regions) are available.
 
-8. Add a `location_id` property into that `service-account.json` file. That property should contain the location of your App Engine. Because the Google Cloud Tasks API is currently in beta, only the regions described in the [Annexes](#annexes)/[Available Regions](#available-regions) are available.
-
-## Getting Started
+## Basics
 
 ```js
 const { join } = require('path')
@@ -126,6 +126,117 @@ queue.task('pathname-01').send(task_01, t => ({ id: t.otherData.age, headers: { 
 	.then(({ status, data }) => console.log({ status, data }))
 ```
 
+## Four ways to create a client
+
+This library supports four different ways to create a client. The first method is the recommended way:
+1. [User the hosting identity](#user-the-hosting-identity)
+2. [Using a `service-account.json`](#using-a-service-accountjson)
+3. [Using explicit credentials](#using-explicit-credentials)
+4. [Using environment variables](#using-environment-variables)
+
+### User the hosting identity
+
+```js
+const { client } = require('google-cloud-tasks')
+
+// There is only one queue per App Engine service. If you have multiple App Engine microservices,
+// you have to create a queue per service.
+const queue = client.new({
+	name: 'your-queue-name', // Required. This is the Google Cloud Task that points to a specific App Engine Service.
+	method: 'POST',		 // Optional. Default 'GET'
+	headers: {		 // Optional. Default {}
+		Accept: 'application/json'
+	},
+	locationId: 'australia-southeast1'	// Required
+})
+```
+
+In this case, the package fetches the credentials automatically. It will try three different techniques to get those data, and if none of them work, an error is thrown. Those techniques are:
+1. If the code is hosted on GCP (e.g., Cloud Compute, App Engine, Cloud Function or Cloud Run) then the credentials are extracted from the service account associated with the GCP service.
+2. If the `GOOGLE_APPLICATION_CREDENTIALS` environment variable exists, its value is supposed to be the path to a service account JSON key file on the hosting machine.
+3. If the `~/.config/gcloud/application_default_credentials.json` file exists, then the credentials it contains are used (more about setting that file up below).
+
+When developing on your local environment, use either #2 or #3. #3 is equivalent to being invited by the SysAdmin to the project and granted specific privileges. To set up `~/.config/gcloud/application_default_credentials.json`, follow those steps:
+
+- Make sure you have a Google account that can access both the GCP project and the resources you need on GCP. 
+- Install the `GCloud CLI` on your environment.
+- Execute the following commands:
+	```
+	gcloud auth login
+	gcloud config set project <YOUR_GCP_PROJECT_HERE>
+	gcloud auth application-default login
+	```
+	The first command logs you in. The second command sets the `<YOUR_GCP_PROJECT_HERE>` as your default project. Finally, the third command creates a new `~/.config/gcloud/application_default_credentials.json` file with the credentials you need for the `<YOUR_GCP_PROJECT_HERE>` project.
+
+### Using a `service-account.json`
+
+We assume that you have created a Service Account in your Google Cloud Account (using IAM) and that you've downloaded a `service-account.json` (the name of the file does not matter as long as it is a valid json file). The first way to create a client is to provide the path to that `service-account.json` as shown in the following example:
+
+```js
+const { join } = require('path')
+const { client } = require('google-cloud-tasks')
+
+// There is only one queue per App Engine service. If you have multiple App Engine microservices,
+// you have to create a queue per service.
+const queue = client.new({
+	name: 'your-queue-name', // Required. This is the Google Cloud Task that points to a specific App Engine Service.
+	method: 'POST',		 // Optional. Default 'GET'
+	headers: {		 // Optional. Default {}
+		Accept: 'application/json'
+	},
+	jsonKeyFile: join(__dirname, './service-account.json')	// Required
+})
+```
+
+### Using explicit credentials
+
+This method is similar to the previous one. You should have dowloaded a `service-account.json`, but instead of providing its path, you provide some of its details explicitly:
+
+```js
+const { client } = require('google-cloud-tasks')
+
+// There is only one queue per App Engine service. If you have multiple App Engine microservices,
+// you have to create a queue per service.
+const queue = client.new({
+	name: 'your-queue-name', // Required. This is the Google Cloud Task that points to a specific App Engine Service.
+	method: 'POST',		 // Optional. Default 'GET'
+	headers: {		 // Optional. Default {}
+		Accept: 'application/json'
+	},
+	credentials: {
+		client_email:'something-1234@your-project-id.iam.gserviceaccount.com', 
+		private_key: '-----BEGIN PRIVATE KEY-----\n123456789-----END PRIVATE KEY-----\n'
+	}
+})
+```
+
+### Using environment variables
+
+```js
+const { client } = require('google-cloud-tasks')
+
+// There is only one queue per App Engine service. If you have multiple App Engine microservices,
+// you have to create a queue per service.
+const queue = client.new({
+	name: 'your-queue-name', // Required. This is the Google Cloud Task that points to a specific App Engine Service.
+	method: 'POST',		 // Optional. Default 'GET'
+	headers: {		 // Optional. Default {}
+		Accept: 'application/json'
+	}
+})
+```
+
+The above will only work if all the following environment variables are set:
+- `GOOGLE_CLOUD_TASK_PROJECT_ID` or `GOOGLE_CLOUD_PROJECT_ID`
+- `GOOGLE_CLOUD_TASK_REGION` or `GOOGLE_CLOUD_REGION`
+- `GOOGLE_CLOUD_TASK_CLIENT_EMAIL` or `GOOGLE_CLOUD_CLIENT_EMAIL`
+- `GOOGLE_CLOUD_TASK_PRIVATE_KEY` or `GOOGLE_CLOUD_PRIVATE_KEY`
+
+> WARNING: If you're using [NPM's `dotenv`](https://www.npmjs.com/package/dotenv), wrap your PRIVATE_KEY between double-quotes, otherwise some characters are escaped which corrupts the key.
+
+Refer to the next section to see how to pass an OAuth2 token.
+
+
 ## How To Test Locally
 
 Because the task queue is nothing but a queue sitting in front of a real web server, there is very little difference between sending messages to the queue or directly to the underlying HTTP endpoint. The only real difference is that hitting the underlying HTTP endpoint will be immediate instead of being scheduled by the queue. Being able to bypass the queue is usually useful during the design or testing phase. Here is an example on how you can send messages directly to the underlying HTTP endpoint:
@@ -133,7 +244,7 @@ Because the task queue is nothing but a queue sitting in front of a real web ser
 ```js
 const queue = client.new({
 	name: 'your-queue-name',								// Required
-	jsonKeyFile: join(__dirname, './service-account.json'),	// Required
+	jsonKeyFile: join(__dirname, './service-account.json'),
 	byPassConfig: {
 		service: 'http://localhost:4000'
 	}
