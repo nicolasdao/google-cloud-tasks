@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.0.0](https://github.com/nicolasdao/google-cloud-tasks/compare/v0.6.1...v1.0.0) (2020-08-20)
+
+
+### Features
+
+* Add support for application default credentials ([12ad89f](https://github.com/nicolasdao/google-cloud-tasks/commit/12ad89f05970d92c564cc45a6912e50fa5aff751))
+
 ### [0.6.1](https://github.com/nicolasdao/google-cloud-tasks/compare/v0.6.0...v0.6.1) (2020-07-16)
 
 
